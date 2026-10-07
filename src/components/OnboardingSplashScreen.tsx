@@ -43,6 +43,7 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
   const [selectedRole, setSelectedRoleState] = useState<UserRole>('driver');
 
   // International Phone Auth State
+  const [isSignInMode, setIsSignInMode] = useState(false);
   const [countryCode, setCountryCode] = useState('+234');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otpInput, setOtpInput] = useState('');
@@ -173,7 +174,15 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
     setIsVerifying(false);
 
     if (result.success) {
-      setStep('registration');
+      if (isSignInMode) {
+        // Direct Sign-In for existing users: skip registration form & enter platform directly
+        await updateUserProfile({
+          phone_number: fullPhone
+        });
+        onComplete();
+      } else {
+        setStep('registration');
+      }
     } else {
       const newAttempts = attemptCount + 1;
       setAttemptCount(newAttempts);
@@ -318,10 +327,34 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
           </div>
         </div>
 
+        {/* SIGN IN VS SIGN UP MODE TOGGLE */}
+        <div className="flex bg-zinc-900 p-1 rounded-xl border border-zinc-800 mb-3 text-xs font-bold">
+          <button
+            type="button"
+            onClick={() => setIsSignInMode(false)}
+            className={`flex-1 py-2 rounded-lg transition-all ${
+              !isSignInMode ? 'bg-amber-500 text-zinc-950 font-black shadow' : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            CREATE NEW ACCOUNT
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsSignInMode(true)}
+            className={`flex-1 py-2 rounded-lg transition-all ${
+              isSignInMode ? 'bg-amber-500 text-zinc-950 font-black shadow' : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            SIGN IN TO EXISTING
+          </button>
+        </div>
+
         {/* INTERNATIONAL PHONE NUMBER FORM */}
-        <form onSubmit={handleSendOtp} className="space-y-3 pt-4 border-t border-zinc-800">
+        <form onSubmit={handleSendOtp} className="space-y-3 pt-2 border-t border-zinc-800">
           <div>
-            <label className="text-[11px] font-bold text-zinc-400 block mb-1">ENTER MOBILE PHONE NUMBER</label>
+            <label className="text-[11px] font-bold text-zinc-400 block mb-1">
+              {isSignInMode ? 'ENTER REGISTERED PHONE NUMBER' : 'ENTER MOBILE PHONE NUMBER'}
+            </label>
             <div className="flex flex-col gap-2">
               <select
                 value={countryCode}

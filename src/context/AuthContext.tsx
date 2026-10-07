@@ -62,6 +62,23 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper to derive default dashboard view tab based on category role
+export function getRoleDefaultTab(role: UserRole): string {
+  switch (role) {
+    case 'fleet':
+      return 'fleet_yard';
+    case 'seller':
+      return 'seller_dash';
+    case 'mechanic':
+      return 'mechanic_dash';
+    case 'admin':
+      return 'admin_panel';
+    case 'driver':
+    default:
+      return 'home';
+  }
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile>(() => {
     if (typeof window !== 'undefined') {
@@ -73,11 +90,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return INITIAL_USER;
   });
 
-  const [currentRole, setCurrentRole] = useState<UserRole>(user.primary_role || 'driver');
+  const [currentRole, setCurrentRoleState] = useState<UserRole>(user.primary_role || 'driver');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
   const [phoneOtpSent, setPhoneOtpSent] = useState<boolean>(false);
   const [otpCode, setOtpCode] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<string>('home');
+  const [activeTab, setActiveTab] = useState<string>(getRoleDefaultTab(user.primary_role || 'driver'));
+
+  const setRole = (role: UserRole) => {
+    setCurrentRoleState(role);
+    setActiveTab(getRoleDefaultTab(role));
+  };
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Persistent Onboarding state
@@ -120,7 +142,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updatedUser = { ...user, ...updates };
     setUser(updatedUser);
     if (updates.primary_role) {
-      setCurrentRole(updates.primary_role);
+      setRole(updates.primary_role);
     }
     if (typeof window !== 'undefined') {
       localStorage.setItem('mechsource_user', JSON.stringify(updatedUser));
@@ -289,7 +311,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         updateUserProfile,
         currentRole,
-        setRole: setCurrentRole,
+        setRole,
         isAuthenticated,
         phoneOtpSent,
         otpCode,

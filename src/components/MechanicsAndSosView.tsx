@@ -11,9 +11,9 @@
  * - Interactive 6-step job execution sheet with photo uploads (Arrived -> Before photos -> Diagnose -> Fit parts -> Test run -> After photos -> Customer sign-off)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { INITIAL_MECHANICS, INITIAL_JOB, MechanicProfile, MechanicJobRecord } from '@/lib/db';
+import { fetchMechanics, INITIAL_JOB, MechanicProfile, MechanicJobRecord } from '@/lib/db';
 import { uploadFile } from '@/lib/storage';
 import {
   Wrench,
@@ -36,8 +36,19 @@ export const MechanicsAndSosView: React.FC = () => {
   const { currentRole, setActiveTab } = useAuth();
 
   // Selected mechanic for booking
-  const [mechanics, setMechanics] = useState<MechanicProfile[]>(INITIAL_MECHANICS);
-  const [selectedMechanic, setSelectedMechanic] = useState<MechanicProfile>(mechanics[0]);
+  const [mechanics, setMechanics] = useState<MechanicProfile[]>([]);
+  const [selectedMechanic, setSelectedMechanic] = useState<MechanicProfile | null>(null);
+
+  useEffect(() => {
+    async function loadMechanics() {
+      const data = await fetchMechanics();
+      setMechanics(data);
+      if (data.length > 0) {
+        setSelectedMechanic(data[0]);
+      }
+    }
+    loadMechanics();
+  }, []);
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
 
   // Emergency SOS state (3 second hold trigger)

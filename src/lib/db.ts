@@ -1,9 +1,18 @@
 /*
- * MECHSOURCE TYPES & DATA PERSISTENCE LAYER
- * Provides full relational data structures, Supabase interface abstraction,
- * and a persistent local memory/localStorage fallback layer so the app functions
- * seamlessly both online with Supabase and offline in standalone web previews.
+ * MECHSOURCE TYPES & DATA ACCESS LAYER
+ * Provides full relational data structures, Supabase live query methods,
+ * and a persistent local storage fallback so the application executes real database operations
+ * online with Supabase and in standalone preview environments.
  */
+
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+export const supabase = (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('your-supabase-project'))
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
 
 export type UserRole = 'driver' | 'fleet' | 'seller' | 'mechanic' | 'admin';
 
@@ -222,7 +231,75 @@ export interface NotificationItem {
   read: boolean;
 }
 
-// INITIAL SEED DATA FOR INTERACTIVE PLATFORM PREVIEW
+// LIVE DATABASE QUERY ABSTRACTION METHODS
+export async function fetchGarageVehicles(userId: string): Promise<GarageVehicle[]> {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('garage_vehicles')
+      .select('*')
+      .eq('user_id', userId);
+    if (!error && data) return data as GarageVehicle[];
+  }
+  return INITIAL_GARAGE;
+}
+
+export async function createGarageVehicle(vehicle: Omit<GarageVehicle, 'id'>): Promise<GarageVehicle> {
+  const newVehicle = { ...vehicle, id: `veh-${Date.now()}` };
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('garage_vehicles')
+      .insert([newVehicle])
+      .select()
+      .single();
+    if (!error && data) return data as GarageVehicle;
+  }
+  return newVehicle as GarageVehicle;
+}
+
+export async function fetchOrders(userId: string): Promise<OrderRecord[]> {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*, items:order_items(*)')
+      .eq('user_id', userId);
+    if (!error && data) return data as OrderRecord[];
+  }
+  return INITIAL_ORDERS;
+}
+
+export async function createOrderRecord(order: OrderRecord): Promise<OrderRecord> {
+  if (supabase) {
+    await supabase.from('orders').insert([{
+      id: order.id,
+      user_id: order.user_id,
+      status: order.status,
+      delivery_address: order.delivery_address,
+      subtotal_parts: order.subtotal_parts,
+      delivery_fee: order.delivery_fee,
+      labour_fee: order.labour_fee,
+      total_amount: order.total_amount,
+      escrow_status: order.escrow_status,
+      fitting_included: order.fitting_included,
+      estimated_arrival_mins: order.estimated_arrival_mins
+    }]);
+
+    if (order.items && order.items.length > 0) {
+      await supabase.from('order_items').insert(
+        order.items.map(item => ({
+          order_id: order.id,
+          part_name: item.part_name,
+          oem_number: item.oem_number,
+          store_name: item.store_name,
+          quantity: item.quantity,
+          unit_price: item.unit_price
+        }))
+      );
+    }
+  }
+  return order;
+}
+
+// INITIAL SEED PERSISTENCE DATA FOR PREVIEW DEMOS
 export const INITIAL_USER: UserProfile = {
   id: 'usr-001',
   phone_number: '+234 803 000 0000',

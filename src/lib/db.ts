@@ -394,7 +394,7 @@ export async function fetchWorkshops(): Promise<Workshop[]> {
 
 // DEFAULT INITIALIZATIONS
 export const INITIAL_USER: UserProfile = {
-  id: 'usr-001',
+  id: '123e4567-e89b-12d3-a456-426614174000',
   phone_number: '+234 803 000 0000',
   full_name: 'Babajide Ogundele',
   email: 'jide@mechsource.ng',
@@ -406,7 +406,7 @@ export const INITIAL_USER: UserProfile = {
 export const INITIAL_GARAGE: GarageVehicle[] = [
   {
     id: 'veh-01',
-    user_id: 'usr-001',
+    user_id: '123e4567-e89b-12d3-a456-426614174000',
     vehicle_type: 'Car / SUV',
     make: 'Toyota',
     model: 'Hilux',
@@ -544,7 +544,7 @@ export const INITIAL_MECHANICS: MechanicProfile[] = [
 export const INITIAL_ORDERS: OrderRecord[] = [
   {
     id: 'MS-89241',
-    user_id: 'usr-001',
+    user_id: '123e4567-e89b-12d3-a456-426614174000',
     mechanic_id: 'mech-01',
     mechanic_name: 'Sampson Okafor (Toyota Specialist)',
     status: 'On the way',

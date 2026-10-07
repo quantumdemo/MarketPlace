@@ -15,8 +15,8 @@ ALTER TABLE IF EXISTS order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS jobs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS wallet_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS part_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS fleet_rfqs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS rfq_quotes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS mechanic_jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS fleet_rfq_quotes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS equipment_rentals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS workshops ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS notifications ENABLE ROW LEVEL SECURITY;
@@ -71,7 +71,7 @@ USING (true);
 CREATE POLICY "Authenticated users can create orders"
 ON orders FOR INSERT
 TO authenticated
-WITH CHECK (auth.uid() = user_id OR user_id IS NOT NULL);
+WITH CHECK (auth.uid() = user_id);
 
 -- Only logged-in users can INSERT order items
 CREATE POLICY "Authenticated users can create order items"
@@ -83,37 +83,37 @@ WITH CHECK (true);
 CREATE POLICY "Authenticated users can park garage vehicles"
 ON garage_vehicles FOR INSERT
 TO authenticated
-WITH CHECK (auth.uid() = user_id OR user_id IS NOT NULL);
+WITH CHECK (auth.uid() = user_id);
 
 -- Only logged-in users can publish part requests
 CREATE POLICY "Authenticated users can create part requests"
 ON part_requests FOR INSERT
 TO authenticated
-WITH CHECK (auth.uid() = user_id OR user_id IS NOT NULL);
+WITH CHECK (auth.uid() = user_id);
 
 -- Only logged-in users can create wallet transactions
 CREATE POLICY "Authenticated users can create wallet transactions"
 ON wallet_transactions FOR INSERT
 TO authenticated
-WITH CHECK (auth.uid() = user_id OR user_id IS NOT NULL);
+WITH CHECK (auth.uid() = user_id);
 
 -- Only logged-in users can upload files
 CREATE POLICY "Authenticated users can upload files"
 ON uploaded_files FOR INSERT
 TO authenticated
-WITH CHECK (auth.uid() = user_id OR user_id IS NOT NULL);
+WITH CHECK (auth.uid() = user_id);
 
 -- Users can view their own orders
 CREATE POLICY "Users can view own orders"
 ON orders FOR SELECT
 TO authenticated
-USING (auth.uid() = user_id OR user_id IS NOT NULL);
+USING (auth.uid() = user_id);
 
 -- Users can view their own garage vehicles
 CREATE POLICY "Users can view own garage vehicles"
 ON garage_vehicles FOR SELECT
 TO authenticated
-USING (auth.uid() = user_id OR user_id IS NOT NULL);
+USING (auth.uid() = user_id);
 
 
 -- ============================================================================

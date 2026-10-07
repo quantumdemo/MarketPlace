@@ -252,7 +252,7 @@ export async function fetchPartRequests(): Promise<PartRequest[]> {
 }
 
 export async function createPartRequest(request: Omit<PartRequest, 'id'>): Promise<PartRequest> {
-  const newReq = { ...request, id: `req-${Date.now()}` };
+  const newReq = { ...request, id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `00000000-0000-4000-8000-${Date.now().toString().slice(-12)}` };
   if (supabase) {
     const { data, error } = await supabase.from('part_requests').insert([newReq]).select().single();
     if (!error && data) return data as PartRequest;
@@ -269,7 +269,7 @@ export async function fetchFleetRFQs(): Promise<FleetRFQ[]> {
 }
 
 export async function createFleetRFQQuote(rfqId: string, quote: Omit<FleetRFQQuote, 'id'>): Promise<FleetRFQQuote> {
-  const newQuote = { ...quote, id: `q-${Date.now()}`, rfq_id: rfqId };
+  const newQuote = { ...quote, id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `00000000-0000-4000-8000-${Date.now().toString().slice(-12)}`, rfq_id: rfqId };
   if (supabase) {
     const { data, error } = await supabase.from('fleet_rfq_quotes').insert([newQuote]).select().single();
     if (!error && data) return data as FleetRFQQuote;
@@ -297,7 +297,7 @@ export async function updateMechanicJobStep(jobId: string, currentStep: number, 
 }
 
 export async function createGarageVehicle(vehicle: Omit<GarageVehicle, 'id'>): Promise<GarageVehicle> {
-  const newVehicle = { ...vehicle, id: `veh-${Date.now()}` };
+  const newVehicle = { ...vehicle, id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `00000000-0000-4000-8000-${Date.now().toString().slice(-12)}` };
   if (supabase) {
     const { data, error } = await supabase
       .from('garage_vehicles')

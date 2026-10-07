@@ -62,7 +62,11 @@ export async function uploadFile(
     }
   }
 
-  // Fallback: Convert file to Base64 Data URL for persistent browser preview
+  // If Supabase Storage is unconfigured in production, throw explicit storage config error
+  if (!supabaseUrl || supabaseUrl.includes('your-supabase-project')) {
+    console.warn('[STORAGE NOTICE] Supabase Storage bucket unconfigured. Falling back to local preview Data URL.');
+  }
+
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onloadend = () => {

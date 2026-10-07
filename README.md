@@ -1,48 +1,36 @@
-# MECHSOURCE DIGITAL PLATFORM
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-MechSource is a production-ready digital platform for machinery parts, maintenance, equipment rental, B2B fleet procurement, and on-demand mobile mechanics.
+## Getting Started
 
----
-
-## Architecture Overview
-
-1. **Database Schema (`supabase/schema.sql`)**
-   - Relational PostgreSQL database tables designed for Supabase.
-   - Covers: Users, Roles, Garage Vehicles, Parts, Listings, Mechanics, Jobs, Orders, Wallet Transactions, RFQs, Rentals, Workshops, Notifications, and File Uploads.
-
-2. **Data Layer & Fallback Store (`src/lib/db.ts`)**
-   - Full TypeScript types for all MechSource entities.
-   - Persistent initial seed data representing real business entities (e.g., Toyota Hilux 2018 1GD-FTV, Denso fuel filter element OEM 23390-0L070, Sampson Okafor "Diesel King" Mechanic Pro, Diesel Pro Ikeja store, Dangote Fleet RFQs).
-
-3. **Storage & File Upload Service (`src/lib/storage.ts`)**
-   - Upload handler for photographs (part snaps, mechanic verification IDs, job proof before/after engine bay photos, seller labels).
-
-4. **Authentication & Multi-Role Context (`src/context/AuthContext.tsx`)**
-   - Manages user sessions, Phone OTP authentication, role switching (Customer/Driver, Fleet Manager, Parts Seller, Mechanic Pro, Admin), garage vehicles, wallet balances, MechSource Protect escrow status, and orders.
-
-5. **UI Components & Visual Design Reference (`src/components/`)**
-   - **`AppShell.tsx`**: Header & bottom navigation tabs aligned with PDF design.
-   - **`GarageView.tsx`**: Vehicle parking, VIN scanner simulator, odometer tracker, and maintenance schedule.
-   - **`FindMyPartView.tsx`**: "Snap It. We Name It." visual part photo scanner, fitment lock, OEM search, and system category browser (ENG, FUL, SRV, BRK, SUS, ELC, CLG, BDY).
-   - **`OrdersAndEscrowView.tsx`**: Multi-seller job sheet checkout, MechSource Protect escrow holding, order tracking, and fitment confirmation modal.
-   - **`MechanicsAndSosView.tsx`**: Verified mechanic trade cards, call-out booking, 6-step job execution sheet with photo uploads, and 3-second hold SOS Emergency mode.
-   - **`SellerAndFleetView.tsx`**: Seller store dashboard with pack queue timers, local part request quote bidding, listing creator, and Fleet Yard machine board with B2B RFQ supplier quote awarding.
-   - **`ExtraModulesView.tsx`**: Workshop directory, Heavy Equipment Rental engine (excavators, silent generators), Wallet ledger, and Super Admin panel.
-
----
-
-## Running Development Server
+First, run the development server:
 
 ```bash
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
----
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-## Production Build & Verification
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-```bash
-npm run build
-```
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

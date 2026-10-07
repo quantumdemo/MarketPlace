@@ -231,7 +231,7 @@ export const FindMyPartView: React.FC = () => {
           value={searchQuery}
           onChange={(e) => handleSearch(e.target.value)}
           placeholder="Enter OEM number (e.g. 23390-0L070) or part name..."
-          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-3.5 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-amber-500 shadow-inner"
+          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-3.5 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition-all shadow-inner"
         />
         <Search className="w-5 h-5 text-zinc-500 absolute left-4 top-3.5" />
       </div>
@@ -247,7 +247,7 @@ export const FindMyPartView: React.FC = () => {
                 setSelectedCategory(cat.code);
                 handleSearch(cat.code);
               }}
-              className={`p-3 rounded-xl border text-left transition-all ${
+              className={`p-3 rounded-xl border text-left transition-all duration-150 active:scale-95 ${
                 selectedCategory === cat.code
                   ? 'bg-amber-500 text-zinc-950 border-amber-500 font-bold shadow-md'
                   : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700 text-zinc-300'
@@ -271,7 +271,24 @@ export const FindMyPartView: React.FC = () => {
         </div>
       </div>
 
+      {/* LOADING SKELETON CARDS FOR DATABASE FETCHING */}
+      {loadingDb && (
+        <div className="space-y-3">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 animate-pulse space-y-3">
+            <div className="h-4 bg-zinc-800 rounded w-1/3"></div>
+            <div className="h-3 bg-zinc-800 rounded w-1/2"></div>
+            <div className="h-10 bg-zinc-800 rounded-xl"></div>
+          </div>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 animate-pulse space-y-3">
+            <div className="h-4 bg-zinc-800 rounded w-1/4"></div>
+            <div className="h-3 bg-zinc-800 rounded w-2/3"></div>
+            <div className="h-10 bg-zinc-800 rounded-xl"></div>
+          </div>
+        </div>
+      )}
+
       {/* MATCHED PARTS & SELLER LISTINGS RESULTS */}
+      {!loadingDb && (
       <div className="space-y-4">
         <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
           <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
@@ -359,6 +376,7 @@ export const FindMyPartView: React.FC = () => {
         )}
 
       </div>
+      )}
 
     </div>
   );

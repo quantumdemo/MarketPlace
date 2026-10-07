@@ -41,22 +41,8 @@ export const GarageView: React.FC = () => {
   const [vin, setVin] = useState('');
 
   // Active selected machine for odometer & service check
-  const [selectedVehicle, setSelectedVehicle] = useState<GarageVehicle>(garage[0] || {
-    id: 'demo-01',
-    user_id: 'usr-001',
-    vehicle_type: 'Car / SUV',
-    make: 'Toyota',
-    model: 'Hilux',
-    year: 2018,
-    engine: '1GD-FTV',
-    fuel_type: 'Diesel',
-    nickname: 'TOYOTA HILUX 2018',
-    odometer_km: 87412,
-    status: 'Running',
-    is_fleet: false
-  });
-
-  const [odometerInput, setOdometerInput] = useState(selectedVehicle.odometer_km.toString());
+  const [selectedVehicle, setSelectedVehicle] = useState<GarageVehicle | null>(garage[0] || null);
+  const [odometerInput, setOdometerInput] = useState(selectedVehicle ? selectedVehicle.odometer_km.toString() : '0');
   const [odometerUpdated, setOdometerUpdated] = useState(false);
 
   // Simulate VIN scan auto-fill
@@ -76,7 +62,7 @@ export const GarageView: React.FC = () => {
 
   const handleSaveVehicle = (e: React.FormEvent) => {
     e.preventDefault();
-    addVehicleToGarage({
+    const newV: Omit<GarageVehicle, 'id' | 'user_id'> = {
       vehicle_type: vehicleType,
       make,
       model,
@@ -88,14 +74,17 @@ export const GarageView: React.FC = () => {
       odometer_km: 0,
       status: 'Running',
       is_fleet: false
-    });
+    };
+    addVehicleToGarage(newV);
     setShowAddModal(false);
   };
 
   const handleUpdateOdometer = () => {
-    selectedVehicle.odometer_km = Number(odometerInput);
-    setOdometerUpdated(true);
-    setTimeout(() => setOdometerUpdated(false), 2000);
+    if (selectedVehicle) {
+      selectedVehicle.odometer_km = Number(odometerInput);
+      setOdometerUpdated(true);
+      setTimeout(() => setOdometerUpdated(false), 2000);
+    }
   };
 
   return (
@@ -120,43 +109,63 @@ export const GarageView: React.FC = () => {
         </button>
       </div>
 
-      {/* PARKED MACHINES HORIZONTAL CARDS (PAGE 23) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {garage.map((v, idx) => (
-          <div
-            key={v.id}
-            onClick={() => {
-              setSelectedVehicle(v);
-              setOdometerInput(v.odometer_km.toString());
-            }}
-            className={`cursor-pointer rounded-2xl p-4 border transition-all ${
-              selectedVehicle.id === v.id
-                ? 'bg-zinc-900 border-amber-500/80 shadow-lg ring-1 ring-amber-500/30'
-                : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
-            }`}
-          >
-            <div className="flex items-center justify-between text-[11px] font-mono text-amber-400 mb-1">
-              <span>MECHSOURCE GARAGE NO. 0{idx + 1}</span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-sans font-bold ${
-                v.status === 'Running' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-              }`}>
-                {v.status}
-              </span>
-            </div>
-
-            <h3 className="font-extrabold text-lg uppercase tracking-tight text-white">{v.make} {v.model}</h3>
-            <div className="flex items-center gap-2 text-xs text-zinc-400 mt-1">
-              <span>YEAR: <strong className="text-zinc-200">{v.year}</strong></span>
-              <span>•</span>
-              <span>ENGINE: <strong className="text-zinc-200">{v.engine}</strong></span>
-              <span>•</span>
-              <span>FUEL: <strong className="text-zinc-200">{v.fuel_type}</strong></span>
-            </div>
+      {/* PARKED MACHINES CARDS OR EMPTY STATE */}
+      {garage.length === 0 ? (
+        <div className="bg-zinc-900 border-2 border-dashed border-zinc-800 rounded-2xl p-8 text-center space-y-4">
+          <div className="bg-amber-500/10 text-amber-400 p-4 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
+            <Car className="w-8 h-8" />
           </div>
-        ))}
-      </div>
+          <div>
+            <h3 className="text-lg font-black text-white">NO MACHINES PARKED YET</h3>
+            <p className="text-xs text-zinc-400 max-w-sm mx-auto mt-1">
+              Park your car, truck, generator or heavy plant machine to lock exact fitment for all parts and maintenance.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black px-5 py-3 rounded-xl text-xs uppercase shadow-lg transition-all"
+          >
+            + PARK YOUR FIRST MACHINE NOW
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {garage.map((v, idx) => (
+            <div
+              key={v.id}
+              onClick={() => {
+                setSelectedVehicle(v);
+                setOdometerInput(v.odometer_km.toString());
+              }}
+              className={`cursor-pointer rounded-2xl p-4 border transition-all ${
+                selectedVehicle?.id === v.id
+                  ? 'bg-zinc-900 border-amber-500/80 shadow-lg ring-1 ring-amber-500/30'
+                  : 'bg-zinc-950 border-zinc-800 hover:border-zinc-700'
+              }`}
+            >
+              <div className="flex items-center justify-between text-[11px] font-mono text-amber-400 mb-1">
+                <span>MECHSOURCE GARAGE NO. 0{idx + 1}</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-sans font-bold ${
+                  v.status === 'Running' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                }`}>
+                  {v.status}
+                </span>
+              </div>
 
-      {/* ACTIVE MACHINE DETAILED ODOMETER & MAINTENANCE HUB (PAGE 23) */}
+              <h3 className="font-extrabold text-lg uppercase tracking-tight text-white">{v.make} {v.model}</h3>
+              <div className="flex items-center gap-2 text-xs text-zinc-400 mt-1">
+                <span>YEAR: <strong className="text-zinc-200">{v.year}</strong></span>
+                <span>•</span>
+                <span>ENGINE: <strong className="text-zinc-200">{v.engine}</strong></span>
+                <span>•</span>
+                <span>FUEL: <strong className="text-zinc-200">{v.fuel_type}</strong></span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ACTIVE MACHINE DETAILED ODOMETER & MAINTENANCE HUB */}
       {selectedVehicle && (
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-6">
 
@@ -167,7 +176,7 @@ export const GarageView: React.FC = () => {
               <p className="text-xs text-zinc-400">VIN: {selectedVehicle.vin || 'AHTFR22G90581920'} · Engine: {selectedVehicle.engine}</p>
             </div>
 
-            {/* ODOMETER DISPLAY (DIGITAL COUNTER STYLE) */}
+            {/* ODOMETER DISPLAY */}
             <div className="flex items-center gap-3 bg-zinc-950 p-3 rounded-xl border border-zinc-800">
               <Gauge className="w-5 h-5 text-amber-400" />
               <div>
@@ -190,7 +199,7 @@ export const GarageView: React.FC = () => {
             </div>
           </div>
 
-          {/* UPCOMING MAINTENANCE INTERACTION SCHEDULE */}
+          {/* UPCOMING MAINTENANCE SCHEDULE */}
           <div>
             <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider mb-3 flex items-center gap-2">
               <Clock className="w-4 h-4" />
@@ -198,8 +207,6 @@ export const GarageView: React.FC = () => {
             </h3>
 
             <div className="space-y-3">
-
-              {/* ITEM 1 */}
               <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-start gap-3">
                   <div className="bg-amber-500/10 p-2 rounded-lg text-amber-400 mt-0.5">
@@ -208,7 +215,7 @@ export const GarageView: React.FC = () => {
                   <div>
                     <h4 className="font-bold text-sm text-white">Engine oil + oil filter</h4>
                     <span className="text-xs text-amber-400 font-semibold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-                      Due Soon · Every 5,000 km (last at 82,400 km)
+                      Due Soon · Every 5,000 km
                     </span>
                   </div>
                 </div>
@@ -220,58 +227,13 @@ export const GarageView: React.FC = () => {
                   <span>Shop Parts</span>
                 </button>
               </div>
-
-              {/* ITEM 2 */}
-              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  <div className="bg-emerald-500/10 p-2 rounded-lg text-emerald-400 mt-0.5">
-                    <Wrench className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-sm text-white">Fuel filter element</h4>
-                    <span className="text-xs text-zinc-400">
-                      In 7,600 km · Replaced at 75,000 km
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setActiveTab('find')}
-                  className="bg-zinc-800 hover:bg-amber-500 hover:text-zinc-950 text-amber-400 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all"
-                >
-                  <ShoppingBag className="w-3.5 h-3.5" />
-                  <span>Shop Parts</span>
-                </button>
-              </div>
-
-              {/* ITEM 3 */}
-              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  <div className="bg-blue-500/10 p-2 rounded-lg text-blue-400 mt-0.5">
-                    <CheckCircle2 className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-sm text-white">Front brake pads</h4>
-                    <span className="text-xs text-emerald-400 font-semibold">
-                      Healthy · Checked last service
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setActiveTab('find')}
-                  className="bg-zinc-800 hover:bg-amber-500 hover:text-zinc-950 text-amber-400 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all"
-                >
-                  <ShoppingBag className="w-3.5 h-3.5" />
-                  <span>Shop Parts</span>
-                </button>
-              </div>
-
             </div>
           </div>
 
         </div>
       )}
 
-      {/* PARK NEW MACHINE MODAL (PAGE 11) */}
+      {/* PARK NEW MACHINE MODAL */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-zinc-950 border border-zinc-800 rounded-2xl max-w-md w-full p-6 space-y-5">

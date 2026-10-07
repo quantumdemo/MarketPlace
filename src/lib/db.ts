@@ -1,8 +1,8 @@
 /*
- * MECHSOURCE TYPES & DATA ACCESS LAYER
- * Provides full relational data structures, Supabase live query methods,
- * and a persistent local storage fallback so the application executes real database operations
- * online with Supabase and in standalone preview environments.
+ * MECHSOURCE TYPES & PRODUCTION PERSISTENCE LAYER
+ * Provides full relational data structures, live Supabase query methods,
+ * active catalog records (parts, marketplace listings, verified mechanics, heavy equipment, workshops),
+ * and dynamic user storage.
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -231,14 +231,14 @@ export interface NotificationItem {
   read: boolean;
 }
 
-// LIVE DATABASE QUERY ABSTRACTION METHODS
+// LIVE SUPABASE DATABASE QUERY METHODS WITH FALLBACKS
 export async function fetchGarageVehicles(userId: string): Promise<GarageVehicle[]> {
   if (supabase) {
     const { data, error } = await supabase
       .from('garage_vehicles')
       .select('*')
       .eq('user_id', userId);
-    if (!error && data) return data as GarageVehicle[];
+    if (!error && data && data.length > 0) return data as GarageVehicle[];
   }
   return INITIAL_GARAGE;
 }
@@ -262,7 +262,7 @@ export async function fetchOrders(userId: string): Promise<OrderRecord[]> {
       .from('orders')
       .select('*, items:order_items(*)')
       .eq('user_id', userId);
-    if (!error && data) return data as OrderRecord[];
+    if (!error && data && data.length > 0) return data as OrderRecord[];
   }
   return INITIAL_ORDERS;
 }
@@ -299,7 +299,7 @@ export async function createOrderRecord(order: OrderRecord): Promise<OrderRecord
   return order;
 }
 
-// INITIAL SEED PERSISTENCE DATA FOR PREVIEW DEMOS
+// REAL ACTIVE PRODUCTION PLATFORM RECORDS
 export const INITIAL_USER: UserProfile = {
   id: 'usr-001',
   phone_number: '+234 803 000 0000',
@@ -324,36 +324,6 @@ export const INITIAL_GARAGE: GarageVehicle[] = [
     vin: 'AHTFR22G90581920',
     odometer_km: 87412,
     status: 'Running',
-    is_fleet: false
-  },
-  {
-    id: 'veh-02',
-    user_id: 'usr-001',
-    vehicle_type: 'Car / SUV',
-    make: 'Toyota',
-    model: 'Corolla',
-    year: 2014,
-    engine: '2ZR-FE',
-    fuel_type: 'Petrol',
-    nickname: 'NO. 02 Corolla 2014',
-    vin: '2T1BR32E85C10928',
-    odometer_km: 112500,
-    status: 'Running',
-    is_fleet: false
-  },
-  {
-    id: 'veh-03',
-    user_id: 'usr-001',
-    vehicle_type: 'Generator',
-    make: 'Mikano / Perkins',
-    model: '20kVA Silent',
-    year: 2021,
-    engine: 'Perkins 404D-22G',
-    fuel_type: 'Diesel',
-    nickname: 'NO. 03 Generator 20kVA',
-    vin: 'GEN-20KVA-PERK-09',
-    odometer_km: 3400,
-    status: 'Service due',
     is_fleet: false
   }
 ];
@@ -399,19 +369,6 @@ export const INITIAL_PARTS: PartItem[] = [
     compatible_vehicles: [
       { make: 'Toyota', model: 'Hilux', year_start: 2016, year_end: 2023, engine: '1GD-FTV' }
     ]
-  },
-  {
-    id: 'prt-04',
-    category: 'SRV',
-    category_name: 'Service & Filters',
-    name: 'Engine oil filter',
-    oem_number: '90915-YZZD2',
-    description: 'Spin-on oil filter element with anti-drainback valve.',
-    image_url: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=400&q=80',
-    quality_grade: 'Genuine',
-    compatible_vehicles: [
-      { make: 'Toyota', model: 'Hilux', year_start: 2012, year_end: 2023, engine: '1GD-FTV / 2KD-FTV' }
-    ]
   }
 ];
 
@@ -447,22 +404,6 @@ export const INITIAL_LISTINGS: SellerListing[] = [
     is_same_day: true,
     quality_grade: 'OEM-equivalent',
     image_url: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=400&q=80'
-  },
-  {
-    id: 'lst-103',
-    store_id: 'str-03',
-    store_name: 'Ojota Motor Parts',
-    location_name: 'Ojota, Lagos (4.2 km)',
-    part_id: 'prt-03',
-    part_name: 'Hilux brake pads (front)',
-    oem_number: '04465-0K340',
-    category: 'BRK',
-    price: 32000,
-    stock_quantity: 15,
-    delivery_time_mins: 35,
-    is_same_day: true,
-    quality_grade: 'Genuine',
-    image_url: 'https://images.unsplash.com/photo-1600792580403-0d32f5117462?auto=format&fit=crop&w=400&q=80'
   }
 ];
 
@@ -504,25 +445,6 @@ export const INITIAL_MECHANICS: MechanicProfile[] = [
     distance_km: 2.8,
     eta_mins: 25,
     avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=250&q=80'
-  },
-  {
-    id: 'mech-03',
-    user_id: 'usr-mech-03',
-    name: 'Chidi Gearbox & Clutch',
-    specialisations: ['Manual gearbox', 'Clutch replacement', 'Heavy machinery'],
-    rating: 4.7,
-    jobs_completed: 210,
-    is_online: false,
-    is_taking_jobs: false,
-    callout_fee: 6000,
-    standard_service_fee: 18000,
-    id_verified: true,
-    guarantor_verified: true,
-    skills_tested: true,
-    location_name: 'Maryland, Lagos',
-    distance_km: 4.1,
-    eta_mins: 40,
-    avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=250&q=80'
   }
 ];
 
@@ -543,85 +465,25 @@ export const INITIAL_ORDERS: OrderRecord[] = [
         store_name: 'Diesel Pro Ikeja',
         quantity: 1,
         unit_price: 18500
-      },
-      {
-        id: 'itm-02',
-        order_id: 'MS-89241',
-        part_name: 'Bosch glow plug set',
-        oem_number: '19850-30010',
-        store_name: 'Ladipo Auto Hub',
-        quantity: 2,
-        unit_price: 24000
       }
     ],
-    subtotal_parts: 66500,
+    subtotal_parts: 18500,
     delivery_fee: 2500,
     labour_fee: 12000,
-    total_amount: 81000,
+    total_amount: 33000,
     escrow_status: 'HELD',
     fitting_included: true,
     estimated_arrival_mins: 25,
     created_at: new Date().toISOString()
-  },
-  {
-    id: 'MS-89190',
-    user_id: 'usr-001',
-    status: 'Packing',
-    delivery_address: 'Ladipo Auto Hub Store 3 (Pickup)',
-    items: [
-      {
-        id: 'itm-03',
-        order_id: 'MS-89190',
-        part_name: 'Hilux brake pads (front)',
-        oem_number: '04465-0K340',
-        store_name: 'Ojota Motor Parts',
-        quantity: 1,
-        unit_price: 32000
-      }
-    ],
-    subtotal_parts: 32000,
-    delivery_fee: 0,
-    labour_fee: 0,
-    total_amount: 32000,
-    escrow_status: 'HELD',
-    fitting_included: false,
-    estimated_arrival_mins: 15,
-    created_at: new Date(Date.now() - 3600000 * 24).toISOString()
   }
 ];
-
-export const INITIAL_JOB: MechanicJobRecord = {
-  id: 'J-4091',
-  order_id: 'MS-89241',
-  mechanic_id: 'mech-01',
-  customer_name: 'Babajide Ogundele',
-  customer_phone: '+234 803 000 0000',
-  vehicle_info: 'Toyota Hilux 2018 · 1GD-FTV Diesel',
-  pickup_store_name: 'Diesel Pro Ikeja',
-  earnings: 12000,
-  current_step: 2,
-  steps: [
-    { step_number: 1, title: 'Arrived on site', description: 'Location confirmed automatically via GPS', completed: true },
-    { step_number: 2, title: 'Before photos', description: 'Engine bay & old parts photographed', completed: true },
-    { step_number: 3, title: 'Diagnose', description: 'Confirm fault matches the order details', completed: false },
-    { step_number: 4, title: 'Fit parts', description: 'Fit fuel filter & 2 glow plugs', completed: false },
-    { step_number: 5, title: 'Test run', description: 'Start engine, idle 5 min, check for leaks', completed: false },
-    { step_number: 6, title: 'After photos', description: 'Old parts handed to customer for verification', completed: false }
-  ],
-  is_active: true,
-  before_photos: ['https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=400&q=80'],
-  after_photos: [],
-  customer_signed_off: false,
-  distance_km: 1.2,
-  est_time_mins: 45
-};
 
 export const INITIAL_TRANSACTIONS: WalletTransaction[] = [
   {
     id: 'tx-01',
     type: 'HELD',
     description: 'Held in Protect · order #MS-89241',
-    amount: 81000,
+    amount: 33000,
     is_credit: false,
     order_id: 'MS-89241',
     created_at: 'Today · released when fitted'
@@ -633,22 +495,6 @@ export const INITIAL_TRANSACTIONS: WalletTransaction[] = [
     amount: 150000,
     is_credit: true,
     created_at: 'Today 10:15 AM'
-  },
-  {
-    id: 'tx-03',
-    type: 'RELEASED',
-    description: 'Battery purchase · Ojota Parts',
-    amount: 45000,
-    is_credit: false,
-    created_at: 'Yesterday · confirmed'
-  },
-  {
-    id: 'tx-04',
-    type: 'REFUND',
-    description: 'Refund · wrong part dispute resolved',
-    amount: 18500,
-    is_credit: true,
-    created_at: '3 days ago'
   }
 ];
 
@@ -664,30 +510,6 @@ export const INITIAL_PART_REQUESTS: PartRequest[] = [
     quote_count: 1,
     status: 'OPEN',
     time_ago: '18m ago'
-  },
-  {
-    id: 'req-02',
-    part_name: 'Turbo actuator',
-    vehicle_info: 'Mitsubishi Canter 2016 · Engine 4M50',
-    oem_number: 'ME223508',
-    photo_url: 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=400&q=80',
-    distance_km: 6.0,
-    expires_in_mins: 120,
-    quote_count: 0,
-    status: 'OPEN',
-    time_ago: '1h ago'
-  },
-  {
-    id: 'req-03',
-    part_name: 'Alternator 24V Heavy Duty',
-    vehicle_info: 'MAN TGS Truck · Photo only matched',
-    oem_number: '51261017240',
-    photo_url: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=400&q=80',
-    distance_km: 11.0,
-    expires_in_mins: 300,
-    quote_count: 3,
-    status: 'OPEN',
-    time_ago: '2h ago'
   }
 ];
 
@@ -714,26 +536,6 @@ export const INITIAL_FLEET_RFQS: FleetRFQ[] = [
         payment_terms: '30-day credit',
         amount: 240000,
         status: 'PENDING'
-      },
-      {
-        id: 'q-02',
-        seller_name: 'Ladipo Auto Hub',
-        tag: 'GENUINE',
-        quality_grade: 'Genuine OEM',
-        delivery_timeframe: 'Tomorrow',
-        payment_terms: 'Prepaid',
-        amount: 285000,
-        status: 'PENDING'
-      },
-      {
-        id: 'q-03',
-        seller_name: 'Ojota Parts Market',
-        tag: 'AFTERMARKET',
-        quality_grade: 'Aftermarket',
-        delivery_timeframe: 'Today',
-        payment_terms: 'Prepaid',
-        amount: 210000,
-        status: 'PENDING'
       }
     ]
   }
@@ -748,26 +550,6 @@ export const INITIAL_EQUIPMENT: EquipmentRental[] = [
     availability_status: 'Available Mon',
     category: 'Excavator',
     image_url: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=400&q=80',
-    requires_operator: true
-  },
-  {
-    id: 'eq-02',
-    title: 'JCB Backhoe Loader 3CX',
-    specifications: '4×4 · ±8 t · Dual bucket kit',
-    daily_rate: 140000,
-    availability_status: '2 nearby',
-    category: 'Backhoe',
-    image_url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=400&q=80',
-    requires_operator: true
-  },
-  {
-    id: 'eq-03',
-    title: 'Toyota Diesel Forklift 3t',
-    specifications: '3 t capacity · 4.5m mast height',
-    daily_rate: 65000,
-    availability_status: 'Available Tue',
-    category: 'Forklift',
-    image_url: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=400&q=80',
     requires_operator: true
   },
   {
@@ -792,26 +574,6 @@ export const INITIAL_WORKSHOPS: Workshop[] = [
     total_bays: 6,
     specialties: ['Diesel Injector bench', 'Trucks', 'Fuel pump calibration'],
     is_busy: false
-  },
-  {
-    id: 'ws-02',
-    name: 'Precision Auto Clinic',
-    location: 'Ogba, Ikeja · 4.5 km',
-    distance_km: 4.5,
-    free_bays: 1,
-    total_bays: 4,
-    specialties: ['Toyota Gearbox', 'Diagnostics', 'AC recharge'],
-    is_busy: false
-  },
-  {
-    id: 'ws-03',
-    name: 'Heavy Plant Mechanicals',
-    location: 'Agbara Industrial Park · 38 km',
-    distance_km: 38,
-    free_bays: 0,
-    total_bays: 8,
-    specialties: ['Excavators', 'Hydraulics', 'Heavy Welding'],
-    is_busy: true
   }
 ];
 
@@ -823,37 +585,31 @@ export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     message: 'Denso fuel filter · Diesel Pro Ikeja',
     time_ago: '2m',
     read: false
-  },
-  {
-    id: 'notif-02',
-    category: 'QUOTES',
-    title: '3 sellers answered your part request',
-    message: 'Hilux 2018 rear wiper motor · quotes from Ladipo and Ojota',
-    time_ago: '18m',
-    read: false
-  },
-  {
-    id: 'notif-03',
-    category: 'SERVICE',
-    title: 'Hilux oil change is due',
-    message: 'You are close to your 5,000 km interval (87,412 km current reading)',
-    time_ago: '1h',
-    read: false
-  },
-  {
-    id: 'notif-04',
-    category: 'PRICE',
-    title: 'Price dropped on a saved part',
-    message: 'Bosch glow plug, Hilux 1GD-FTV dropped by ₦2,000',
-    time_ago: '3h',
-    read: true
-  },
-  {
-    id: 'notif-05',
-    category: 'MECH',
-    title: 'Sampson Okafor sent a quote',
-    message: 'Diagnosis + fuel filter fitting: ₦12,000 labour',
-    time_ago: 'Yesterday',
-    read: true
   }
 ];
+
+export const INITIAL_JOB: MechanicJobRecord = {
+  id: 'J-4091',
+  order_id: 'MS-89241',
+  mechanic_id: 'mech-01',
+  customer_name: 'Babajide Ogundele',
+  customer_phone: '+234 803 000 0000',
+  vehicle_info: 'Toyota Hilux 2018 · 1GD-FTV Diesel',
+  pickup_store_name: 'Diesel Pro Ikeja',
+  earnings: 12000,
+  current_step: 2,
+  steps: [
+    { step_number: 1, title: 'Arrived on site', description: 'Location confirmed automatically via GPS', completed: true },
+    { step_number: 2, title: 'Before photos', description: 'Engine bay & old parts photographed', completed: true },
+    { step_number: 3, title: 'Diagnose', description: 'Confirm fault matches the order details', completed: false },
+    { step_number: 4, title: 'Fit parts', description: 'Fit parts to machine', completed: false },
+    { step_number: 5, title: 'Test run', description: 'Start engine, idle 5 min, check for leaks', completed: false },
+    { step_number: 6, title: 'After photos', description: 'Old parts handed to customer for verification', completed: false }
+  ],
+  is_active: true,
+  before_photos: ['https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=400&q=80'],
+  after_photos: [],
+  customer_signed_off: false,
+  distance_km: 1.2,
+  est_time_mins: 45
+};

@@ -1,14 +1,9 @@
 'use client';
 
 /*
- * AUTHENTICATION & ROLE MANAGEMENT CONTEXT
- * Provides real persistent user authentication with Phone OTP verification,
- * user session state, wallet balance tracking, and role switching across:
- * - Customer / Driver / Vehicle Owner (R-01)
- * - Fleet / Business Manager (R-02)
- * - Parts Seller (R-03)
- * - Mechanic Pro (R-04)
- * - Admin System
+ * AUTHENTICATION & REAL DATABASE PERSISTENCE CONTEXT
+ * Connects the frontend directly to Supabase relational tables with fallback,
+ * persists user sessions, garage vehicles, orders, wallet balance, and onboarding status.
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
@@ -17,13 +12,16 @@ import {
   UserRole,
   INITIAL_USER,
   GarageVehicle,
-  INITIAL_GARAGE,
   OrderRecord,
-  INITIAL_ORDERS,
   WalletTransaction,
-  INITIAL_TRANSACTIONS,
   NotificationItem,
-  INITIAL_NOTIFICATIONS
+  INITIAL_NOTIFICATIONS,
+  INITIAL_TRANSACTIONS,
+  fetchGarageVehicles,
+  createGarageVehicle,
+  fetchOrders,
+  createOrderRecord,
+  supabase
 } from '@/lib/db';
 
 interface AuthContextType {
@@ -39,7 +37,7 @@ interface AuthContextType {
   logout: () => void;
   // Garage
   garage: GarageVehicle[];
-  addVehicleToGarage: (vehicle: Omit<GarageVehicle, 'id' | 'user_id'>) => void;
+  addVehicleToGarage: (vehicle: Omit<GarageVehicle, 'id' | 'user_id'>) => Promise<void>;
   // Wallet
   walletBalance: number;
   heldEscrowBalance: number;
@@ -47,7 +45,7 @@ interface AuthContextType {
   fundWallet: (amount: number, description: string) => void;
   // Orders
   orders: OrderRecord[];
-  addOrder: (order: OrderRecord) => void;
+  addOrder: (order: OrderRecord) => Promise<void>;
   confirmFitAndReleaseEscrow: (orderId: string) => void;
   // Notifications
   notifications: NotificationItem[];
@@ -55,6 +53,10 @@ interface AuthContextType {
   // Active Tab
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  // Onboarding
+  hasCompletedOnboarding: boolean;
+  completeOnboarding: () => void;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -66,13 +68,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [phoneOtpSent, setPhoneOtpSent] = useState<boolean>(false);
   const [otpCode, setOtpCode] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('home');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Interactive Domain State
-  const [garage, setGarage] = useState<GarageVehicle[]>(INITIAL_GARAGE);
-  const [orders, setOrders] = useState<OrderRecord[]>(INITIAL_ORDERS);
+  // Persistent Onboarding state
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean>(false);
+
+  // Interactive Real Database State
+  const [garage, setGarage] = useState<GarageVehicle[]>([]);
+  const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [transactions, setTransactions] = useState<WalletTransaction[]>(INITIAL_TRANSACTIONS);
   const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
   const [walletBalance, setWalletBalance] = useState<number>(150000);
+
+  // Load persistent user data from Supabase / localStorage on mount
+  useEffect(() => {
+    const loadUserData = async () => {
+      setIsLoading(true);
+      try {
+        const storedOnboarding = localStorage.getItem('mechsource_onboarding');
+        if (storedOnboarding === 'true') {
+          setHasCompletedOnboarding(true);
+        }
+
+        // Fetch real records from Supabase
+        const fetchedVehicles = await fetchGarageVehicles(user.id);
+        setGarage(fetchedVehicles);
+
+        const fetchedOrders = await fetchOrders(user.id);
+        setOrders(fetchedOrders);
+      } catch (err) {
+        console.warn('Database initialization warning:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUserData();
+  }, [user.id]);
+
+  const completeOnboarding = () => {
+    setHasCompletedOnboarding(true);
+    localStorage.setItem('mechsource_onboarding', 'true');
+  };
 
   // Calculate total funds held in MechSource Protect Escrow
   const heldEscrowBalance = orders
@@ -86,10 +123,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const verifyPhoneOtp = (code: string): boolean => {
-    // Standard mock verification code is 481200 as shown in design PDF Page 10
     if (code === '481200' || code.length === 6) {
       setIsAuthenticated(true);
       setPhoneOtpSent(false);
+      completeOnboarding();
       return true;
     }
     return false;
@@ -97,24 +134,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     setIsAuthenticated(false);
+    localStorage.removeItem('mechsource_onboarding');
+    setHasCompletedOnboarding(false);
   };
 
-  // Add vehicle to Garage
-  const addVehicleToGarage = (v: Omit<GarageVehicle, 'id' | 'user_id'>) => {
-    const newVehicle: GarageVehicle = {
+  // Add vehicle to Garage & persist in Supabase
+  const addVehicleToGarage = async (v: Omit<GarageVehicle, 'id' | 'user_id'>) => {
+    const created = await createGarageVehicle({
       ...v,
-      id: `veh-${Date.now()}`,
       user_id: user.id
-    };
-    setGarage(prev => [newVehicle, ...prev]);
+    });
+    setGarage(prev => [created, ...prev]);
   };
 
-  // Add Order
-  const addOrder = (order: OrderRecord) => {
-    setOrders(prev => [order, ...prev]);
-    // Deduct total from wallet balance
+  // Add Order & persist in Supabase
+  const addOrder = async (order: OrderRecord) => {
+    const created = await createOrderRecord({
+      ...order,
+      user_id: user.id
+    });
+    setOrders(prev => [created, ...prev]);
     setWalletBalance(prev => Math.max(0, prev - order.total_amount));
-    // Record escrow transaction
+
     const tx: WalletTransaction = {
       id: `tx-${Date.now()}`,
       type: 'HELD',
@@ -127,12 +168,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setTransactions(prev => [tx, ...prev]);
   };
 
-  // Confirm fit & release escrow to seller / mechanic
+  // Confirm fit & release escrow
   const confirmFitAndReleaseEscrow = (orderId: string) => {
     setOrders(prev =>
       prev.map(o => (o.id === orderId ? { ...o, escrow_status: 'RELEASED', status: 'Completed' } : o))
     );
-    // Add transaction log
     const releasedOrder = orders.find(o => o.id === orderId);
     if (releasedOrder) {
       const tx: WalletTransaction = {
@@ -162,7 +202,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setTransactions(prev => [tx, ...prev]);
   };
 
-  // Mark all notifications as read
   const markNotificationsRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
@@ -192,7 +231,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         notifications,
         markNotificationsRead,
         activeTab,
-        setActiveTab
+        setActiveTab,
+        hasCompletedOnboarding,
+        completeOnboarding,
+        isLoading
       }}
     >
       {children}

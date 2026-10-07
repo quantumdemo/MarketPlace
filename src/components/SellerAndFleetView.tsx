@@ -13,7 +13,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { INITIAL_PART_REQUESTS, INITIAL_FLEET_RFQS, PartRequest, FleetRFQ } from '@/lib/db';
-import { uploadFile } from '@/lib/storage';
 import {
   Store,
   PackageCheck,
@@ -62,6 +61,8 @@ export const SellerAndFleetView: React.FC = () => {
     setTimeout(() => setListingPublished(false), 3000);
   };
 
+  const activeRfq = rfqs[0] || null;
+
   return (
     <div className="space-y-6 pb-20 text-zinc-100">
 
@@ -98,11 +99,11 @@ export const SellerAndFleetView: React.FC = () => {
         </div>
       </div>
 
-      {/* SELLER SYSTEM MODULE (PAGES 27, 28 & 29) */}
+      {/* SELLER SYSTEM MODULE */}
       {(currentRole === 'seller' || currentRole === 'driver') && (
         <div className="space-y-6">
 
-          {/* SELLER STATS BANNER (PAGE 27) */}
+          {/* SELLER STATS BANNER */}
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 text-center">
               <span className="text-2xl font-black text-amber-400 font-mono block">3</span>
@@ -110,7 +111,7 @@ export const SellerAndFleetView: React.FC = () => {
             </div>
 
             <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 text-center">
-              <span className="text-2xl font-black text-amber-400 font-mono block">7</span>
+              <span className="text-2xl font-black text-amber-400 font-mono block">{partRequests.length}</span>
               <span className="text-xs text-zinc-400 font-bold">Part Requests Near You</span>
             </div>
 
@@ -120,7 +121,7 @@ export const SellerAndFleetView: React.FC = () => {
             </div>
           </div>
 
-          {/* PACK QUEUE WITH COUNTDOWN TIMERS (PAGE 27) */}
+          {/* PACK QUEUE WITH COUNTDOWN TIMERS */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
@@ -163,7 +164,7 @@ export const SellerAndFleetView: React.FC = () => {
             </div>
           </div>
 
-          {/* LOCAL PART REQUEST BIDDING RADAR (PAGE 28) */}
+          {/* LOCAL PART REQUEST BIDDING RADAR */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <div>
@@ -173,50 +174,56 @@ export const SellerAndFleetView: React.FC = () => {
               <span className="text-xs text-zinc-400">First good quote usually wins</span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {partRequests.map((req) => (
-                <div key={req.id} className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-3">
-                  <div className="flex justify-between text-xs text-amber-400 font-mono">
-                    <span>{req.distance_km} km away</span>
-                    <span>{req.expires_in_mins} mins left</span>
-                  </div>
+            {partRequests.length === 0 ? (
+              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-6 text-center text-xs text-zinc-400">
+                No active buyer part requests within 15 km area right now.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {partRequests.map((req) => (
+                  <div key={req.id} className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-3">
+                    <div className="flex justify-between text-xs text-amber-400 font-mono">
+                      <span>{req.distance_km} km away</span>
+                      <span>{req.expires_in_mins} mins left</span>
+                    </div>
 
-                  <div className="flex gap-3">
-                    <img src={req.photo_url} alt={req.part_name} className="w-16 h-16 rounded-lg object-cover border border-zinc-800" />
-                    <div>
-                      <h4 className="font-bold text-sm text-white">{req.part_name}</h4>
-                      <p className="text-xs text-zinc-400">{req.vehicle_info}</p>
+                    <div className="flex gap-3">
+                      <img src={req.photo_url} alt={req.part_name} className="w-16 h-16 rounded-lg object-cover border border-zinc-800" />
+                      <div>
+                        <h4 className="font-bold text-sm text-white">{req.part_name}</h4>
+                        <p className="text-xs text-zinc-400">{req.vehicle_info}</p>
+                      </div>
                     </div>
-                  </div>
 
-                  {quotedRequests.includes(req.id) ? (
-                    <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-2 rounded text-xs font-bold text-center">
-                      ✓ Quote Sent to Buyer
-                    </div>
-                  ) : (
-                    <div className="space-y-2 pt-1">
-                      <input
-                        type="number"
-                        placeholder="Your price (₦)"
-                        value={quoteInput[req.id] || ''}
-                        onChange={(e) => setQuoteInput({ ...quoteInput, [req.id]: e.target.value })}
-                        className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-xs text-amber-400 font-mono font-bold focus:outline-none"
-                      />
-                      <button
-                        onClick={() => handleSendQuote(req.id)}
-                        className="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold py-2 rounded-lg text-xs transition-colors flex items-center justify-center gap-1"
-                      >
-                        <Send className="w-3.5 h-3.5" />
-                        <span>SEND QUOTE</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                    {quotedRequests.includes(req.id) ? (
+                      <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-2 rounded text-xs font-bold text-center">
+                        ✓ Quote Sent to Buyer
+                      </div>
+                    ) : (
+                      <div className="space-y-2 pt-1">
+                        <input
+                          type="number"
+                          placeholder="Your price (₦)"
+                          value={quoteInput[req.id] || ''}
+                          onChange={(e) => setQuoteInput({ ...quoteInput, [req.id]: e.target.value })}
+                          className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-xs text-amber-400 font-mono font-bold focus:outline-none"
+                        />
+                        <button
+                          onClick={() => handleSendQuote(req.id)}
+                          className="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold py-2 rounded-lg text-xs transition-colors flex items-center justify-center gap-1"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>SEND QUOTE</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* NEW LISTING BUILDER WITH PHOTO SCANNER (PAGE 29) */}
+          {/* NEW LISTING BUILDER */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
             <div className="border-b border-zinc-800 pb-3">
               <span className="text-[10px] font-mono text-amber-400 uppercase">INVENTORY LISTING BUILDER</span>
@@ -272,11 +279,11 @@ export const SellerAndFleetView: React.FC = () => {
         </div>
       )}
 
-      {/* FLEET & B2B PROCUREMENT MODULE (PAGES 34 & 35) */}
+      {/* FLEET & B2B PROCUREMENT MODULE */}
       {(currentRole === 'fleet' || currentRole === 'admin') && (
         <div className="space-y-6">
 
-          {/* THE YARD MACHINE STATUS BOARD (PAGE 34) */}
+          {/* THE YARD MACHINE STATUS BOARD */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-3">
               <div>
@@ -304,7 +311,7 @@ export const SellerAndFleetView: React.FC = () => {
             </div>
           </div>
 
-          {/* B2B PROCUREMENT RFQ & QUOTE COMPARISON (PAGE 35) */}
+          {/* B2B PROCUREMENT RFQ & QUOTE COMPARISON */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
               <div>
@@ -316,44 +323,50 @@ export const SellerAndFleetView: React.FC = () => {
 
             {/* QUOTES RECEIVED LIST */}
             <div className="space-y-3">
-              <h4 className="text-xs font-bold text-amber-400 uppercase">QUOTES RECEIVED (3 SUPPLIERS)</h4>
+              <h4 className="text-xs font-bold text-amber-400 uppercase">QUOTES RECEIVED</h4>
 
-              {rfqs[0].quotes.map((q) => (
-                <div
-                  key={q.id}
-                  className={`bg-zinc-950 border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all ${
-                    awardedRfqId === q.id ? 'border-emerald-500 bg-emerald-500/5' : 'border-zinc-800'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-extrabold text-sm text-white">{q.seller_name}</span>
-                      <span className="bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-mono px-2 py-0.5 rounded">
-                        {q.tag}
-                      </span>
-                    </div>
-                    <p className="text-xs text-zinc-400">
-                      {q.quality_grade} · {q.delivery_timeframe} delivery · {q.payment_terms}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <span className="text-base font-black text-amber-400 font-mono">₦{q.amount.toLocaleString()}</span>
-                    {awardedRfqId === q.id ? (
-                      <span className="bg-emerald-500 text-zinc-950 font-black px-3 py-1.5 rounded-lg text-xs">
-                        AWARDED PO
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => setAwardedRfqId(q.id)}
-                        className="bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold px-3 py-1.5 rounded-lg text-xs"
-                      >
-                        AWARD PO
-                      </button>
-                    )}
-                  </div>
+              {!activeRfq || !activeRfq.quotes || activeRfq.quotes.length === 0 ? (
+                <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-6 text-center text-xs text-zinc-400">
+                  No supplier quotes received for RFQs yet. Create a new B2B RFQ to invite supplier bids.
                 </div>
-              ))}
+              ) : (
+                activeRfq.quotes.map((q) => (
+                  <div
+                    key={q.id}
+                    className={`bg-zinc-950 border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all ${
+                      awardedRfqId === q.id ? 'border-emerald-500 bg-emerald-500/5' : 'border-zinc-800'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-extrabold text-sm text-white">{q.seller_name}</span>
+                        <span className="bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-mono px-2 py-0.5 rounded">
+                          {q.tag}
+                        </span>
+                      </div>
+                      <p className="text-xs text-zinc-400">
+                        {q.quality_grade} · {q.delivery_timeframe} delivery · {q.payment_terms}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className="text-base font-black text-amber-400 font-mono">₦{q.amount.toLocaleString()}</span>
+                      {awardedRfqId === q.id ? (
+                        <span className="bg-emerald-500 text-zinc-950 font-black px-3 py-1.5 rounded-lg text-xs">
+                          AWARDED PO
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => setAwardedRfqId(q.id)}
+                          className="bg-amber-500 hover:bg-amber-400 text-zinc-950 font-extrabold px-3 py-1.5 rounded-lg text-xs"
+                        >
+                          AWARD PO
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
 
             <div className="pt-2 border-t border-zinc-800 flex justify-between items-center text-xs text-zinc-400">

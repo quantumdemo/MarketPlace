@@ -44,7 +44,7 @@ export const FindMyPartView: React.FC = () => {
 
   // Search results state
   const [matchedParts, setMatchedParts] = useState<PartItem[]>(INITIAL_PARTS);
-  const [activeListings, setActiveListings] = useState<SellerListing[]>(INITIAL_LISTINGS);
+  const [allListings, setAllListings] = useState<SellerListing[]>(INITIAL_LISTINGS);
   const [orderCreatedNotice, setOrderCreatedNotice] = useState<string | null>(null);
 
   // Handle Snap photo upload & AI part identification integration point
@@ -83,7 +83,21 @@ export const FindMyPartView: React.FC = () => {
     setMatchedParts(filtered);
   };
 
-  const handleBuyNow = (listing: SellerListing) => {
+  // Filter listings based on active search query or selected category
+  const activeListings = allListings.filter(l => {
+    if (!searchQuery.trim()) {
+      return l.category === selectedCategory || selectedCategory === 'ALL';
+    }
+    const query = searchQuery.toLowerCase();
+    return (
+      l.oem_number.toLowerCase().includes(query) ||
+      l.part_name.toLowerCase().includes(query) ||
+      l.category.toLowerCase().includes(query) ||
+      l.store_name.toLowerCase().includes(query)
+    );
+  });
+
+  const handleBuyNow = async (listing: SellerListing) => {
     const newOrder: OrderRecord = {
       id: `MS-${Math.floor(10000 + Math.random() * 90000)}`,
       user_id: 'usr-001',
@@ -110,7 +124,7 @@ export const FindMyPartView: React.FC = () => {
       created_at: new Date().toISOString()
     };
 
-    addOrder(newOrder);
+    await addOrder(newOrder);
     setOrderCreatedNotice(`Order #${newOrder.id} placed! ₦${newOrder.total_amount.toLocaleString()} held in MechSource Protect.`);
     setTimeout(() => setOrderCreatedNotice(null), 4000);
   };
@@ -129,7 +143,7 @@ export const FindMyPartView: React.FC = () => {
   return (
     <div className="space-y-6 pb-20 text-zinc-100">
 
-      {/* HEADER & FITMENT LOCK BAR (PAGES 8 & 12) */}
+      {/* HEADER & FITMENT LOCK BAR */}
       <div className="border-b border-zinc-800 pb-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div>
@@ -152,7 +166,7 @@ export const FindMyPartView: React.FC = () => {
         </div>
       </div>
 
-      {/* SNAP IT. WE NAME IT. PHOTO CAMERA PANEL (PAGE 8) */}
+      {/* SNAP IT. WE NAME IT. PHOTO CAMERA PANEL */}
       <div className="bg-gradient-to-r from-amber-500/15 via-zinc-900 to-zinc-900 border border-amber-500/30 rounded-2xl p-5 space-y-4 shadow-xl">
         <div className="flex items-center gap-2 text-amber-400 text-xs font-mono font-bold tracking-wider">
           <Sparkles className="w-4 h-4" />
@@ -201,7 +215,7 @@ export const FindMyPartView: React.FC = () => {
         <Search className="w-5 h-5 text-zinc-500 absolute left-4 top-3.5" />
       </div>
 
-      {/* BROWSE BY SYSTEM CATEGORIES (PAGE 12) */}
+      {/* BROWSE BY SYSTEM CATEGORIES */}
       <div>
         <h3 className="text-xs font-mono text-amber-400 uppercase tracking-wider mb-3">BROWSE BY SYSTEM</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -236,14 +250,14 @@ export const FindMyPartView: React.FC = () => {
         </div>
       </div>
 
-      {/* MATCHED PARTS & SELLER LISTINGS RESULTS (PAGE 13) */}
+      {/* MATCHED PARTS & SELLER LISTINGS RESULTS */}
       <div className="space-y-4">
         <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
           <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
             <Layers className="w-4 h-4 text-amber-400" />
             PART LISTINGS & SELLER STORES
           </h3>
-          <span className="text-xs font-mono text-amber-400">{matchedParts.length} Parts Matched</span>
+          <span className="text-xs font-mono text-amber-400">{activeListings.length} Listings Matched</span>
         </div>
 
         {/* ORDER SUCCESS NOTIFICATION */}
@@ -259,62 +273,69 @@ export const FindMyPartView: React.FC = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {activeListings.map((listing) => (
-            <div
-              key={listing.id}
-              className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 space-y-3 hover:border-amber-500/50 transition-all flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-center justify-between text-xs mb-2">
-                  <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    FITS HILUX 2018
-                  </span>
-                  <span className="bg-zinc-900 border border-zinc-800 text-zinc-300 px-2 py-0.5 rounded text-[10px] font-mono">
-                    {listing.quality_grade}
-                  </span>
-                </div>
+        {activeListings.length === 0 ? (
+          <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-8 text-center text-xs text-zinc-400 space-y-2">
+            <p className="font-bold text-white text-sm">No seller listings match this filter.</p>
+            <p>Try searching another OEM number or submit a local part request to request quotes from nearby sellers within 15 km.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {activeListings.map((listing) => (
+              <div
+                key={listing.id}
+                className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 space-y-3 hover:border-amber-500/50 transition-all flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between text-xs mb-2">
+                    <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      FITS HILUX 2018
+                    </span>
+                    <span className="bg-zinc-900 border border-zinc-800 text-zinc-300 px-2 py-0.5 rounded text-[10px] font-mono">
+                      {listing.quality_grade}
+                    </span>
+                  </div>
 
-                <div className="flex gap-3">
-                  <img
-                    src={listing.image_url}
-                    alt={listing.part_name}
-                    className="w-20 h-20 object-cover rounded-xl border border-zinc-800 shrink-0"
-                  />
-                  <div>
-                    <h4 className="font-extrabold text-base text-white">{listing.part_name}</h4>
-                    <p className="text-xs font-mono text-amber-400 font-semibold">{listing.oem_number}</p>
-                    <p className="text-xs text-zinc-400 flex items-center gap-1 mt-1">
-                      <Building2 className="w-3.5 h-3.5 text-zinc-500" />
-                      {listing.store_name}
-                    </p>
+                  <div className="flex gap-3">
+                    <img
+                      src={listing.image_url}
+                      alt={listing.part_name}
+                      className="w-20 h-20 object-cover rounded-xl border border-zinc-800 shrink-0"
+                    />
+                    <div>
+                      <h4 className="font-extrabold text-base text-white">{listing.part_name}</h4>
+                      <p className="text-xs font-mono text-amber-400 font-semibold">{listing.oem_number}</p>
+                      <p className="text-xs text-zinc-400 flex items-center gap-1 mt-1">
+                        <Building2 className="w-3.5 h-3.5 text-zinc-500" />
+                        {listing.store_name}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="pt-3 border-t border-zinc-800 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] text-zinc-400 block">PRICE FROM SELLER</span>
-                  <span className="text-lg font-black text-amber-400">₦{listing.price.toLocaleString()}</span>
-                  <span className="text-[10px] text-zinc-400 block flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-zinc-500" />
-                    Arrives in {listing.delivery_time_mins} mins
-                  </span>
+                <div className="pt-3 border-t border-zinc-800 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-zinc-400 block">PRICE FROM SELLER</span>
+                    <span className="text-lg font-black text-amber-400">₦{listing.price.toLocaleString()}</span>
+                    <span className="text-[10px] text-zinc-400 block flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-zinc-500" />
+                      Arrives in {listing.delivery_time_mins} mins
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => handleBuyNow(listing)}
+                    className="bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-md"
+                  >
+                    <ShoppingBag className="w-4 h-4" />
+                    <span>BUY NOW</span>
+                  </button>
                 </div>
 
-                <button
-                  onClick={() => handleBuyNow(listing)}
-                  className="bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black px-4 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-md"
-                >
-                  <ShoppingBag className="w-4 h-4" />
-                  <span>BUY NOW</span>
-                </button>
               </div>
-
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
       </div>
 

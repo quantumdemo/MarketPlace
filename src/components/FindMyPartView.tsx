@@ -73,7 +73,7 @@ export const FindMyPartView: React.FC = () => {
     setPhotoUrl(upload.url);
 
     // AI Service Layer Integration Point: Checked for live vision API configuration
-    const hasAiApiKey = process.env.NEXT_PUBLIC_VISION_AI_KEY;
+    const hasAiApiKey = process.env.NEXT_PUBLIC_OPENAI_VISION_KEY || process.env.OPENAI_VISION_KEY;
     setTimeout(() => {
       setAnalyzingPhoto(false);
       if (hasAiApiKey) {

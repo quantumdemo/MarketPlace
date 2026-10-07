@@ -135,14 +135,19 @@ CREATE TABLE IF NOT EXISTS mechanic_jobs (
     order_id VARCHAR(50) REFERENCES orders(id) ON DELETE CASCADE,
     mechanic_id UUID REFERENCES mechanic_profiles(id) ON DELETE CASCADE,
     customer_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    customer_name VARCHAR(250) DEFAULT 'Babajide Ogundele',
+    customer_phone VARCHAR(50) DEFAULT '+234 803 000 0000',
     vehicle_info VARCHAR(250) NOT NULL,
     pickup_store_name VARCHAR(250),
     earnings DECIMAL(12,2) NOT NULL,
     current_step INT DEFAULT 1, -- 1 to 6
+    steps JSONB DEFAULT '[]'::jsonb,
     is_active BOOLEAN DEFAULT TRUE,
     before_photos TEXT[] DEFAULT ARRAY[]::text[],
     after_photos TEXT[] DEFAULT ARRAY[]::text[],
     customer_signed_off BOOLEAN DEFAULT FALSE,
+    distance_km DECIMAL(5,2) DEFAULT 1.2,
+    est_time_mins INT DEFAULT 45,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

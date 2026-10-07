@@ -12,7 +12,7 @@ ALTER TABLE IF EXISTS listings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS mechanic_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS order_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS mechanic_jobs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS wallet_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS part_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS mechanic_jobs ENABLE ROW LEVEL SECURITY;
@@ -114,6 +114,30 @@ CREATE POLICY "Users can view own garage vehicles"
 ON garage_vehicles FOR SELECT
 TO authenticated
 USING (auth.uid() = user_id);
+
+-- Public & Authenticated can view active mechanic jobs
+CREATE POLICY "Public can read mechanic jobs"
+ON mechanic_jobs FOR SELECT
+TO public
+USING (true);
+
+-- Public & Authenticated can view part requests
+CREATE POLICY "Public can read part requests"
+ON part_requests FOR SELECT
+TO public
+USING (true);
+
+-- Public & Authenticated can view notifications
+CREATE POLICY "Public can read notifications"
+ON notifications FOR SELECT
+TO public
+USING (true);
+
+-- Public & Authenticated can view wallet transactions
+CREATE POLICY "Public can read wallet transactions"
+ON wallet_transactions FOR SELECT
+TO public
+USING (true);
 
 
 -- ============================================================================

@@ -123,7 +123,7 @@ export const GarageView: React.FC = () => {
           </div>
           <button
             onClick={() => setShowAddModal(true)}
-            className="bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black px-5 py-3 rounded-xl text-xs uppercase shadow-lg transition-all"
+            className="bg-amber-500 hover:bg-amber-400 active:scale-[0.98] text-zinc-950 font-black px-5 py-3.5 rounded-xl text-xs uppercase shadow-lg transition-all duration-200"
           >
             + PARK YOUR FIRST MACHINE NOW
           </button>

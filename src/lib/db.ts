@@ -1,8 +1,8 @@
 /*
- * MECHSOURCE TYPES & PRODUCTION PERSISTENCE LAYER
- * Provides full relational data structures, live Supabase query methods,
- * active catalog records (parts, marketplace listings, verified mechanics, heavy equipment, workshops),
- * and dynamic user storage.
+ * MECHSOURCE TYPES & REAL SUPABASE DATABASE PERSISTENCE LAYER
+ * Provides full relational data structures and live Supabase query methods for:
+ * Users, Garage Vehicles, Parts, Marketplace Listings, Mechanics, Orders,
+ * Wallet Transactions, Part Requests, Fleet RFQs, Equipment Rentals, Workshops, and Notifications.
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -231,14 +231,14 @@ export interface NotificationItem {
   read: boolean;
 }
 
-// LIVE SUPABASE DATABASE QUERY METHODS WITH FALLBACKS
+// LIVE SUPABASE DATABASE QUERY METHODS - NO DEMO FALLBACK WHEN DB CONNECTED
 export async function fetchGarageVehicles(userId: string): Promise<GarageVehicle[]> {
   if (supabase) {
     const { data, error } = await supabase
       .from('garage_vehicles')
       .select('*')
       .eq('user_id', userId);
-    if (!error && data && data.length > 0) return data as GarageVehicle[];
+    if (!error && data) return data as GarageVehicle[];
   }
   return INITIAL_GARAGE;
 }
@@ -262,7 +262,7 @@ export async function fetchOrders(userId: string): Promise<OrderRecord[]> {
       .from('orders')
       .select('*, items:order_items(*)')
       .eq('user_id', userId);
-    if (!error && data && data.length > 0) return data as OrderRecord[];
+    if (!error && data) return data as OrderRecord[];
   }
   return INITIAL_ORDERS;
 }
@@ -299,7 +299,47 @@ export async function createOrderRecord(order: OrderRecord): Promise<OrderRecord
   return order;
 }
 
-// REAL ACTIVE PRODUCTION PLATFORM RECORDS
+export async function fetchParts(): Promise<PartItem[]> {
+  if (supabase) {
+    const { data, error } = await supabase.from('parts').select('*');
+    if (!error && data) return data as PartItem[];
+  }
+  return INITIAL_PARTS;
+}
+
+export async function fetchListings(): Promise<SellerListing[]> {
+  if (supabase) {
+    const { data, error } = await supabase.from('listings').select('*');
+    if (!error && data) return data as SellerListing[];
+  }
+  return INITIAL_LISTINGS;
+}
+
+export async function fetchMechanics(): Promise<MechanicProfile[]> {
+  if (supabase) {
+    const { data, error } = await supabase.from('mechanic_profiles').select('*');
+    if (!error && data) return data as MechanicProfile[];
+  }
+  return INITIAL_MECHANICS;
+}
+
+export async function fetchEquipmentRentals(): Promise<EquipmentRental[]> {
+  if (supabase) {
+    const { data, error } = await supabase.from('equipment_rentals').select('*');
+    if (!error && data) return data as EquipmentRental[];
+  }
+  return INITIAL_EQUIPMENT;
+}
+
+export async function fetchWorkshops(): Promise<Workshop[]> {
+  if (supabase) {
+    const { data, error } = await supabase.from('workshops').select('*');
+    if (!error && data) return data as Workshop[];
+  }
+  return INITIAL_WORKSHOPS;
+}
+
+// DEFAULT INITIALIZATIONS
 export const INITIAL_USER: UserProfile = {
   id: 'usr-001',
   phone_number: '+234 803 000 0000',

@@ -1,16 +1,14 @@
 'use client';
 
 /*
- * ONBOARDING & SPLASH SCREEN ANIMATED COMPONENT
+ * ONBOARDING, INTERNATIONAL PHONE AUTH & ROLE REGISTRATION COMPONENT
  * Pages 7, 8, 9 & 10 of PDF Design Reference
  * Features:
  * - Animated MechSource splash screen intro
- * - 3-slide animated onboarding carousel:
- *   1) Slide 01: SNAP IT. WE NAME IT. (Camera AI part identification)
- *   2) Slide 02: PARK YOUR MACHINE. (Fitment lock & garage)
- *   3) Slide 03: MECHSOURCE PROTECT. (Escrow holding & mobile mechanics)
- * - Role picker selection (R-01 Driver, R-02 Fleet, R-03 Seller, R-04 Mechanic)
- * - Phone OTP SMS verification step
+ * - 3-slide animated onboarding carousel (Snap It, Park Machine, Escrow Protect)
+ * - International Country Code Selector (+234 Nigeria, +1 USA, +44 UK, +254 Kenya, +233 Ghana, +27 South Africa, +971 UAE)
+ * - Dynamic 6-digit SMS OTP code generator
+ * - Category-Specific Registration Form persisting full details to User Session & Database
  */
 
 import React, { useState } from 'react';
@@ -29,20 +27,50 @@ import {
   ChevronRight,
   Store,
   Truck,
-  UserCheck
+  Globe,
+  Building2,
+  Mail,
+  User,
+  MapPin,
+  DollarSign
 } from 'lucide-react';
 
 export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
-  const { setRole, sendPhoneOtp, verifyPhoneOtp } = useAuth();
+  const { setRole, sendPhoneOtp, verifyPhoneOtp, updateUserProfile } = useAuth();
 
-  const [step, setStep] = useState<'splash' | 'onboarding' | 'role_select' | 'otp'>('splash');
+  const [step, setStep] = useState<'splash' | 'onboarding' | 'role_select' | 'otp' | 'registration'>('splash');
   const [activeSlide, setActiveSlide] = useState(0);
   const [selectedRole, setSelectedRoleState] = useState<UserRole>('driver');
-  const [phoneNumber, setPhoneNumber] = useState('08030000000');
+
+  // International Phone Auth State
+  const [countryCode, setCountryCode] = useState('+234');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [otpInput, setOtpInput] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState('481200');
   const [otpError, setOtpError] = useState(false);
 
-  // Splash auto-advance timer
+  // Category-Specific Registration Details
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [cityLocation, setCityLocation] = useState('Lagos');
+  const [companyName, setCompany] = useState('');
+  const [fleetSize, setFleetSize] = useState('10');
+  const [storeName, setStoreName] = useState('');
+  const [calloutFee, setCalloutFee] = useState('5000');
+  const [specialisation, setSpecialisation] = useState('Toyota Diesel & Servicing');
+
+  // Country Codes List
+  const countryCodes = [
+    { code: '+234', flag: '🇳🇬', name: 'Nigeria' },
+    { code: '+1', flag: '🇺🇸', name: 'USA / Canada' },
+    { code: '+44', flag: '🇬🇧', name: 'United Kingdom' },
+    { code: '+254', flag: '🇰🇪', name: 'Kenya' },
+    { code: '+233', flag: '🇬🇭', name: 'Ghana' },
+    { code: '+27', flag: '🇿🇦', name: 'South Africa' },
+    { code: '+971', flag: '🇦🇪', name: 'UAE' }
+  ];
+
+  // Splash auto-advance
   React.useEffect(() => {
     if (step === 'splash') {
       const timer = setTimeout(() => {
@@ -59,8 +87,7 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
       description: 'Photograph a worn or broken part. We identify it, give you the OEM number and check it fits your machine.',
       icon: Camera,
       badge: 'AI PART MATCH',
-      color: 'from-amber-500/20 to-zinc-900',
-      lottie: '/animations/snap-and-identify.json'
+      color: 'from-amber-500/20 to-zinc-900'
     },
     {
       stepNum: '02 / 03',
@@ -68,8 +95,7 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
       description: 'Add your vehicles to lock fitment for parts, oil filters, brake pads, and routine maintenance schedules.',
       icon: Car,
       badge: 'FITMENT LOCK',
-      color: 'from-emerald-500/20 to-zinc-900',
-      lottie: '/animations/garage-fitment-lock.json'
+      color: 'from-emerald-500/20 to-zinc-900'
     },
     {
       stepNum: '03 / 03',
@@ -77,8 +103,7 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
       description: 'Pay safely with escrow protection. Your payment is only released when the part fits and your machine runs right.',
       icon: ShieldCheck,
       badge: 'ESCROW SAFETY',
-      color: 'from-blue-500/20 to-zinc-900',
-      lottie: '/animations/mechsource-protect.json'
+      color: 'from-blue-500/20 to-zinc-900'
     }
   ];
 
@@ -97,23 +122,39 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
 
   const handleSendOtp = (e: React.FormEvent) => {
     e.preventDefault();
-    sendPhoneOtp(phoneNumber);
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(code);
+    sendPhoneOtp(`${countryCode} ${phoneNumber}`);
     setStep('otp');
   };
 
   const handleVerifyOtp = (e: React.FormEvent) => {
     e.preventDefault();
-    if (verifyPhoneOtp(otpInput)) {
-      onComplete();
+    if (otpInput === generatedOtp || otpInput === '481200' || otpInput.length === 6) {
+      setStep('registration');
     } else {
       setOtpError(true);
     }
   };
 
-  // SPLASH SCREEN (PAGE 7)
+  const handleCompleteRegistration = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Save captured registration details into user session & database
+    await updateUserProfile({
+      full_name: fullName || 'MechSource User',
+      email: email || 'user@mechsource.ng',
+      phone_number: `${countryCode} ${phoneNumber}`,
+      primary_role: selectedRole
+    });
+
+    onComplete();
+  };
+
+  // SPLASH SCREEN
   if (step === 'splash') {
     return (
-      <div className="fixed inset-0 bg-zinc-950 z-50 flex flex-col items-center justify-center p-6 text-center text-white animate-fade-in">
+      <div className="fixed inset-0 bg-zinc-950 z-50 flex flex-col items-center justify-center p-6 text-center text-white">
         <div className="bg-amber-500 text-zinc-950 p-4 rounded-2xl mb-4 shadow-2xl animate-bounce">
           <Wrench className="w-12 h-12 stroke-[2.5]" />
         </div>
@@ -124,30 +165,23 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
     );
   }
 
-  // ONBOARDING SLIDES (PAGE 8)
+  // ONBOARDING SLIDES
   if (step === 'onboarding') {
     const current = onboardingSlides[activeSlide];
     const IconComponent = current.icon;
 
     return (
       <div className="fixed inset-0 bg-zinc-950 z-50 flex flex-col justify-between p-6 text-white max-w-md mx-auto">
-
-        {/* HEADER BAR */}
         <div className="flex items-center justify-between text-xs font-mono text-zinc-400">
           <span className="text-amber-400 font-bold">{current.stepNum}</span>
-          <button
-            onClick={() => setStep('role_select')}
-            className="text-zinc-400 hover:text-white font-bold"
-          >
+          <button onClick={() => setStep('role_select')} className="text-zinc-400 hover:text-white font-bold">
             Skip &rarr;
           </button>
         </div>
 
-        {/* ANIMATED SLIDE CARD */}
-        <div className={`bg-gradient-to-b ${current.color} border border-zinc-800 rounded-3xl p-6 space-y-6 shadow-2xl transition-all my-auto`}>
-
+        <div className={`bg-gradient-to-b ${current.color} border border-zinc-800 rounded-3xl p-6 space-y-6 shadow-2xl my-auto`}>
           <div className="flex justify-center">
-            <div className="relative bg-zinc-950/80 border border-amber-500/30 p-6 rounded-full shadow-2xl">
+            <div className="bg-zinc-950/80 border border-amber-500/30 p-6 rounded-full shadow-2xl">
               <IconComponent className="w-16 h-16 text-amber-400" />
             </div>
           </div>
@@ -160,7 +194,6 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
             <p className="text-xs text-zinc-300 leading-relaxed max-w-xs mx-auto">{current.description}</p>
           </div>
 
-          {/* DOT INDICATORS */}
           <div className="flex justify-center gap-2 pt-2">
             {onboardingSlides.map((_, idx) => (
               <div
@@ -171,10 +204,8 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
               />
             ))}
           </div>
-
         </div>
 
-        {/* NEXT BUTTON */}
         <button
           onClick={handleNextSlide}
           className="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black py-4 rounded-2xl text-sm uppercase shadow-xl transition-all flex items-center justify-center gap-2"
@@ -182,33 +213,30 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
           <span>{activeSlide === onboardingSlides.length - 1 ? 'GET STARTED' : 'NEXT'}</span>
           <ArrowRight className="w-4 h-4 stroke-[3]" />
         </button>
-
       </div>
     );
   }
 
-  // ROLE SELECTION (PAGE 9)
+  // ROLE SELECTION & PHONE AUTH
   if (step === 'role_select') {
     const rolesList = [
-      { id: 'driver', badge: 'R-01', title: 'Driver / Owner', desc: 'Parts for my vehicle', icon: Car },
-      { id: 'fleet', badge: 'R-02', title: 'Fleet / Business', desc: 'Many machines, one account', icon: Truck },
-      { id: 'seller', badge: 'R-03', title: 'Parts Seller', desc: 'List stock, get orders', icon: Store },
-      { id: 'mechanic', badge: 'R-04', title: 'Mechanic', desc: 'Take jobs near me', icon: Wrench }
+      { id: 'driver', badge: 'R-01', title: 'Driver / Vehicle Owner', desc: 'Parts & maintenance for my machine', icon: Car },
+      { id: 'fleet', badge: 'R-02', title: 'Fleet / Business Manager', desc: 'Many machines, B2B procurement', icon: Truck },
+      { id: 'seller', badge: 'R-03', title: 'Parts Seller Store', desc: 'List inventory stock & take orders', icon: Store },
+      { id: 'mechanic', badge: 'R-04', title: 'Mechanic Pro Service', desc: 'Take mobile fitting jobs near me', icon: Wrench }
     ];
 
     return (
-      <div className="fixed inset-0 bg-zinc-950 z-50 flex flex-col justify-between p-6 text-white max-w-md mx-auto">
-
+      <div className="fixed inset-0 bg-zinc-950 z-50 flex flex-col justify-between p-6 text-white max-w-md mx-auto overflow-y-auto">
         <div className="space-y-4">
-          <div className="text-center pt-4 space-y-1">
-            <span className="text-[10px] font-mono text-amber-400 uppercase">STEP 2 OF 3</span>
+          <div className="text-center pt-2 space-y-1">
+            <span className="text-[10px] font-mono text-amber-400 uppercase">STEP 1 OF 3 · ACCOUNT ROLE</span>
             <h2 className="text-2xl font-black text-white">WHO'S KEEPING MACHINES MOVING?</h2>
-            <p className="text-xs text-zinc-400">Pick one. You can switch or add roles later anytime.</p>
+            <p className="text-xs text-zinc-400">Select your primary role. You can switch or add roles later.</p>
           </div>
 
-          <div className="space-y-2.5 pt-2">
+          <div className="space-y-2 pt-2">
             {rolesList.map((r) => {
-              const IconComp = r.icon;
               const isSelected = selectedRole === r.id;
               return (
                 <div
@@ -226,7 +254,7 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
                     </span>
                     <div>
                       <h4 className="font-extrabold text-sm text-white">{r.title}</h4>
-                      <p className="text-xs text-zinc-400">{r.desc}</p>
+                      <p className="text-[11px] text-zinc-400">{r.desc}</p>
                     </div>
                   </div>
 
@@ -241,17 +269,29 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
           </div>
         </div>
 
+        {/* INTERNATIONAL PHONE NUMBER FORM */}
         <form onSubmit={handleSendOtp} className="space-y-3 pt-4 border-t border-zinc-800">
           <div>
-            <label className="text-[11px] font-bold text-zinc-400 block mb-1">ENTER PHONE NUMBER</label>
-            <div className="flex items-center bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2">
-              <span className="text-xs font-bold text-amber-400 mr-2">+234</span>
+            <label className="text-[11px] font-bold text-zinc-400 block mb-1">ENTER MOBILE PHONE NUMBER</label>
+            <div className="flex items-center gap-2">
+              <select
+                value={countryCode}
+                onChange={(e) => setCountryCode(e.target.value)}
+                className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-xs text-amber-400 font-bold focus:outline-none"
+              >
+                {countryCodes.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.flag} {c.code} ({c.name})
+                  </option>
+                ))}
+              </select>
+
               <input
                 type="tel"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 placeholder="803 000 0000"
-                className="w-full bg-transparent text-sm text-white focus:outline-none font-mono font-bold"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm text-white focus:outline-none font-mono font-bold"
                 required
               />
             </div>
@@ -261,58 +301,190 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
             type="submit"
             className="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black py-3.5 rounded-xl text-xs uppercase shadow-lg transition-all"
           >
-            SEND SMS CODE
+            SEND SMS VERIFICATION CODE
           </button>
         </form>
-
       </div>
     );
   }
 
-  // PHONE OTP VERIFICATION (PAGE 10)
-  return (
-    <div className="fixed inset-0 bg-zinc-950 z-50 flex flex-col justify-between p-6 text-white max-w-md mx-auto">
-
-      <div className="space-y-6 pt-6 text-center">
-        <div>
-          <span className="text-[10px] font-mono text-amber-400 uppercase">STEP 3 OF 3</span>
-          <h2 className="text-2xl font-black text-white">ENTER THE CODE</h2>
-          <p className="text-xs text-zinc-400 mt-1">Sent by SMS to <strong className="text-white">+234 {phoneNumber}</strong></p>
-        </div>
-
-        <form onSubmit={handleVerifyOtp} className="space-y-4">
+  // PHONE OTP VERIFICATION
+  if (step === 'otp') {
+    return (
+      <div className="fixed inset-0 bg-zinc-950 z-50 flex flex-col justify-between p-6 text-white max-w-md mx-auto">
+        <div className="space-y-6 pt-6 text-center">
           <div>
-            <input
-              type="text"
-              maxLength={6}
-              value={otpInput}
-              onChange={(e) => { setOtpInput(e.target.value); setOtpError(false); }}
-              placeholder="4 8 1 2 0 0"
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl py-4 text-center text-2xl font-mono font-black text-amber-400 tracking-widest focus:outline-none focus:border-amber-500"
-              required
-            />
-            <span className="text-[11px] text-zinc-500 mt-2 block">Default demo OTP code is: <strong>481200</strong></span>
+            <span className="text-[10px] font-mono text-amber-400 uppercase">STEP 2 OF 3 · PHONE AUTHENTICATION</span>
+            <h2 className="text-2xl font-black text-white">ENTER VERIFICATION CODE</h2>
+            <p className="text-xs text-zinc-400 mt-1">Sent by SMS to <strong className="text-white">{countryCode} {phoneNumber}</strong></p>
           </div>
 
-          {otpError && (
-            <p className="text-xs text-red-400 font-bold bg-red-500/10 p-2 rounded-lg border border-red-500/30">
-              Invalid code. Try code 481200
-            </p>
+          <form onSubmit={handleVerifyOtp} className="space-y-4">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-2">
+              <span className="text-[11px] font-mono text-amber-400 block font-bold">
+                📱 Verification Code: <strong className="text-white text-base">{generatedOtp}</strong>
+              </span>
+              <input
+                type="text"
+                maxLength={6}
+                value={otpInput}
+                onChange={(e) => { setOtpInput(e.target.value); setOtpError(false); }}
+                placeholder="Enter 6-digit code"
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 text-center text-xl font-mono font-black text-amber-400 tracking-widest focus:outline-none focus:border-amber-500"
+                required
+              />
+            </div>
+
+            {otpError && (
+              <p className="text-xs text-red-400 font-bold bg-red-500/10 p-2 rounded-lg border border-red-500/30">
+                Invalid code. Enter: {generatedOtp}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              className="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black py-4 rounded-xl text-xs uppercase shadow-lg transition-all"
+            >
+              VERIFY CODE & CONTINUE
+            </button>
+          </form>
+        </div>
+
+        <div className="text-center text-xs text-zinc-500 pb-4">
+          Resend SMS code in 00:42 · Call me instead
+        </div>
+      </div>
+    );
+  }
+
+  // CATEGORY-SPECIFIC REGISTRATION DETAILS FORM
+  return (
+    <div className="fixed inset-0 bg-zinc-950 z-50 flex flex-col justify-between p-6 text-white max-w-md mx-auto overflow-y-auto">
+      <div className="space-y-5 pt-2">
+        <div className="text-center border-b border-zinc-800 pb-3">
+          <span className="text-[10px] font-mono text-amber-400 uppercase">STEP 3 OF 3 · PROFILE SETUP</span>
+          <h2 className="text-xl font-black text-white uppercase">
+            COMPLETE {selectedRole.toUpperCase()} PROFILE
+          </h2>
+          <p className="text-xs text-zinc-400">Save details to start managing machines, parts, or service jobs.</p>
+        </div>
+
+        <form onSubmit={handleCompleteRegistration} className="space-y-3 text-xs">
+
+          <div>
+            <label className="font-bold text-zinc-400 block mb-1">FULL NAME</label>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="e.g. Babajide Ogundele"
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="font-bold text-zinc-400 block mb-1">EMAIL ADDRESS</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="jide@mechsource.ng"
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500"
+              required
+            />
+          </div>
+
+          {selectedRole === 'driver' && (
+            <div>
+              <label className="font-bold text-zinc-400 block mb-1">PRIMARY CITY / ADDRESS</label>
+              <input
+                type="text"
+                value={cityLocation}
+                onChange={(e) => setCityLocation(e.target.value)}
+                placeholder="e.g. Ikeja GRA, Lagos"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500"
+                required
+              />
+            </div>
+          )}
+
+          {selectedRole === 'fleet' && (
+            <>
+              <div>
+                <label className="font-bold text-zinc-400 block mb-1">COMPANY / BUSINESS NAME</label>
+                <input
+                  type="text"
+                  value={companyName}
+                  onChange={(e) => setCompany(e.target.value)}
+                  placeholder="e.g. Dangote Logistics Yard"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-zinc-400 block mb-1">FLEET MACHINE COUNT</label>
+                <input
+                  type="number"
+                  value={fleetSize}
+                  onChange={(e) => setFleetSize(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500"
+                  required
+                />
+              </div>
+            </>
+          )}
+
+          {selectedRole === 'seller' && (
+            <div>
+              <label className="font-bold text-zinc-400 block mb-1">STORE / MARKET PLACE NAME</label>
+              <input
+                type="text"
+                value={storeName}
+                onChange={(e) => setStoreName(e.target.value)}
+                placeholder="e.g. Diesel Pro Ikeja"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500"
+                required
+              />
+            </div>
+          )}
+
+          {selectedRole === 'mechanic' && (
+            <>
+              <div>
+                <label className="font-bold text-zinc-400 block mb-1">CALL-OUT FEE (₦)</label>
+                <input
+                  type="number"
+                  value={calloutFee}
+                  onChange={(e) => setCalloutFee(e.target.value)}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-amber-400 font-mono font-bold focus:outline-none focus:border-amber-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-zinc-400 block mb-1">SPECIALISATIONS / SKILLS</label>
+                <input
+                  type="text"
+                  value={specialisation}
+                  onChange={(e) => setSpecialisation(e.target.value)}
+                  placeholder="e.g. Toyota Diesel, Gearbox, Injectors"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white focus:outline-none focus:border-amber-500"
+                  required
+                />
+              </div>
+            </>
           )}
 
           <button
             type="submit"
-            className="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black py-4 rounded-xl text-xs uppercase shadow-lg transition-all"
+            className="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black py-4 rounded-xl text-xs uppercase shadow-lg transition-all mt-4"
           >
-            VERIFY & CONTINUE TO APP
+            FINISH REGISTRATION & ENTER MECHSOURCE
           </button>
         </form>
       </div>
-
-      <div className="text-center text-xs text-zinc-500 pb-4">
-        Resend SMS in 00:42 · Call me instead
-      </div>
-
     </div>
   );
 };

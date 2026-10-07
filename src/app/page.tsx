@@ -2,7 +2,8 @@
 
 /*
  * MAIN MECHSOURCE APPLICATION PAGE ENTRYPOINT
- * Integrates AuthProvider, AppShell layout, header and bottom tab views:
+ * Integrates AuthProvider, AppShell layout, onboarding carousel splash screen, and bottom tab views:
+ * - Onboarding Splash Screen & Role Selection
  * - Home / Garage Hub
  * - Find My Part Engine
  * - Orders & MechSource Protect Escrow
@@ -11,9 +12,10 @@
  * - Workshops, Equipment Rental & Account Settings
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { AppHeader, BottomNavBar } from '@/components/AppShell';
+import { OnboardingSplashScreen } from '@/components/OnboardingSplashScreen';
 import { GarageView } from '@/components/GarageView';
 import { FindMyPartView } from '@/components/FindMyPartView';
 import { OrdersAndEscrowView } from '@/components/OrdersAndEscrowView';
@@ -23,6 +25,11 @@ import { ExtraModulesView } from '@/components/ExtraModulesView';
 
 const MainContent: React.FC = () => {
   const { activeTab } = useAuth();
+  const [showOnboarding, setShowOnboarding] = useState(true);
+
+  if (showOnboarding) {
+    return <OnboardingSplashScreen onComplete={() => setShowOnboarding(false)} />;
+  }
 
   const renderActiveView = () => {
     switch (activeTab) {

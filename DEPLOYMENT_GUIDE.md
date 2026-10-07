@@ -1,6 +1,6 @@
 # MECHSOURCE DEPLOYMENT & MOBILE BUILD GUIDE
 
-This document provides step-by-step instructions for connecting your Supabase database, launching on Vercel, and building native Android and iOS mobile applications.
+This document provides step-by-step instructions for connecting your Supabase database, launching on Vercel, and building native Android and iOS mobile applications with Lottie onboarding animations.
 
 ---
 
@@ -49,9 +49,48 @@ This document provides step-by-step instructions for connecting your Supabase da
 
 ---
 
-## 3. BUILDING ANDROID AND iOS MOBILE APPS
+## 3. LOTTIE ANIMATIONS FOR MOBILE (ANDROID & iOS)
 
-MechSource is structured so that the exact same Next.js frontend and Supabase backend can power native Android (.apk/.aab) and iOS (.app/.ipa) applications using **Capacitor** or **React Native / Expo**.
+The codebase includes 3 native Lottie JSON onboarding animations in `public/animations/`:
+1. `snap-and-identify.json` ("SNAP IT. WE NAME IT." camera AI part match)
+2. `garage-fitment-lock.json` ("PARK YOUR MACHINE" vehicle garage & maintenance)
+3. `mechsource-protect.json` ("MECHSOURCE PROTECT" escrow payment & mobile mechanics)
+
+### Native Android Setup (Lottie-Android)
+Add to your Android `app/build.gradle`:
+```groovy
+dependencies {
+    implementation 'com.airbnb.android:lottie:6.1.0'
+}
+```
+In your XML layout or Jetpack Compose:
+```xml
+<com.airbnb.lottie.LottieAnimationView
+    android:id="@+id/animation_view"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    app:lottie_fileName="snap-and-identify.json"
+    app:lottie_autoPlay="true"
+    app:lottie_loop="true" />
+```
+
+### Native iOS Setup (Lottie-iOS)
+Add via Swift Package Manager: `https://github.com/airbnb/lottie-ios.git`
+In SwiftUI:
+```swift
+import Lottie
+
+struct OnboardingView: View {
+    var body: some View {
+        LottieView(animation: .named("snap-and-identify"))
+            .playing(loopMode: .loop)
+    }
+}
+```
+
+---
+
+## 4. BUILDING ANDROID AND iOS MOBILE APPS
 
 ### Option A: Using Capacitor (Easiest - Wraps Web App with Native Bridge)
 
@@ -94,12 +133,15 @@ MechSource is structured so that the exact same Next.js frontend and Supabase ba
 
 ---
 
-### Option B: Using React Native / Expo (Shared REST/GraphQL & Supabase API)
+### Option B: Using React Native / Expo
 
 If you prefer pure native components in the future:
-1. Initialize an Expo project in a `mobile` subfolder:
+1. Initialize an Expo project:
    ```bash
    npx create-expo-app mobile --template
    ```
-2. Import `@supabase/supabase-js` into the Expo app.
-3. Reuse the database types from `src/lib/db.ts` to consume the same Supabase database.
+2. Install `lottie-react-native`:
+   ```bash
+   npx expo install lottie-react-native
+   ```
+3. Load the JSON files directly from `public/animations/`.

@@ -273,7 +273,7 @@ export const SellerAndFleetView: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black py-3 rounded-xl text-xs uppercase shadow-lg transition-all"
+              className="w-full bg-amber-500 hover:bg-amber-400 active:scale-[0.98] text-zinc-950 font-black py-3.5 rounded-xl text-xs uppercase shadow-md transition-all duration-200"
               >
                 PUBLISH LISTING TO MECHSOURCE MARKETPLACE
               </button>

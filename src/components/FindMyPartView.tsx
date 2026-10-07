@@ -43,6 +43,7 @@ export const FindMyPartView: React.FC = () => {
   const [aiAnalysisResult, setAiAnalysisResult] = useState<string | null>(null);
 
   // Search results state
+  const [loadingDb, setLoadingDb] = useState(true);
   const [dbParts, setDbParts] = useState<PartItem[]>([]);
   const [matchedParts, setMatchedParts] = useState<PartItem[]>([]);
   const [allListings, setAllListings] = useState<SellerListing[]>([]);
@@ -51,11 +52,13 @@ export const FindMyPartView: React.FC = () => {
   // Load real records from database
   useEffect(() => {
     async function loadData() {
+      setLoadingDb(true);
       const parts = await fetchParts();
       const listings = await fetchListings();
       setDbParts(parts);
       setMatchedParts(parts);
       setAllListings(listings);
+      setLoadingDb(false);
     }
     loadData();
   }, []);

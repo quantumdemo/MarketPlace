@@ -386,9 +386,10 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
 
           <button
             type="submit"
-            className="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black py-4 rounded-xl text-xs uppercase shadow-lg transition-all tracking-wider"
+            className="w-full bg-amber-500 hover:bg-amber-400 active:scale-[0.98] text-zinc-950 font-black py-4 rounded-xl text-xs uppercase shadow-lg transition-all duration-200 tracking-wider flex items-center justify-center gap-2"
           >
-            SEND SMS VERIFICATION CODE
+            <Phone className="w-4 h-4 stroke-[2.5]" />
+            <span>SEND SMS VERIFICATION CODE</span>
           </button>
         </form>
       </div>
@@ -432,12 +433,15 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
             <button
               type="submit"
               disabled={isLocked || isVerifying || otpInput.length < 6}
-              className="w-full bg-amber-500 hover:bg-amber-400 disabled:bg-zinc-800 disabled:text-zinc-500 text-zinc-950 font-black py-4 rounded-xl text-xs uppercase shadow-lg transition-all tracking-wider flex items-center justify-center gap-2"
+              className="w-full bg-amber-500 hover:bg-amber-400 active:scale-[0.98] disabled:bg-zinc-800 disabled:text-zinc-500 disabled:transform-none text-zinc-950 font-black py-4 rounded-xl text-xs uppercase shadow-lg transition-all duration-200 tracking-wider flex items-center justify-center gap-2"
             >
               {isVerifying ? (
                 <span>VERIFYING SERVER-SIDE...</span>
               ) : (
-                <span>VERIFY CODE & CONTINUE (STEP 3)</span>
+                <>
+                  <ShieldCheck className="w-4 h-4 stroke-[2.5]" />
+                  <span>VERIFY CODE & CONTINUE (STEP 3)</span>
+                </>
               )}
             </button>
           </form>

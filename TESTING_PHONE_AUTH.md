@@ -4,20 +4,55 @@ This guide provides step-by-step instructions for testing the MechSource product
 
 ---
 
-## 1. REQUIRED ENVIRONMENT VARIABLES (`.env.local` / Vercel Environment)
+## 1. WHERE DO THESE API KEYS COME FROM? (EXPLANATION)
 
-To enable real SMS and Voice OTP delivery, configure the following keys in your Vercel Project Settings or local `.env.local` file:
+> **Important Clarification:** No, these SMS/Voice keys do **not** come directly from Supabase. Supabase acts as your authentication server, database, and backend logic layer. To deliver real SMS text messages or voice calls to real physical mobile phones (+234 Nigeria or international), Supabase connects to external telecommunications API gateways.
+
+1. **Termii** (`TERMII_API_KEY`) is the premier SMS & Voice gateway across Africa (specifically optimized for high-delivery rates in Nigeria on +234 numbers).
+2. **Twilio** (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`) is the global telecommunications gateway for international numbers (USA, UK, Kenya, UAE, Ghana, Europe, Asia).
+
+---
+
+## 1B. STEP-BY-STEP: HOW TO GET YOUR TERMII API KEY (+234 NIGERIA)
+
+1. Go to **[Termii's Official Portal](https://termii.com)** and click **Get Started** / **Sign Up**.
+2. Complete account registration and log in to the **Termii Dashboard**.
+3. In the left navigation menu, click **API Keys** (or navigate to `Dashboard -> Settings -> API Keys`).
+4. Copy your **API Key** string (e.g. `TLxxxxxxxxxxxxxxxxxxxxxxxxxx`).
+5. Set this as `TERMII_API_KEY` in your Vercel Environment Variables and Supabase Edge Function Secrets (`supabase secrets set TERMII_API_KEY=...`).
+6. *(Optional for production branding)* Go to **Sender ID** in Termii dashboard and submit `MechSource` for official telecom registration.
+
+---
+
+## 1C. STEP-BY-STEP: HOW TO GET YOUR TWILIO CREDENTIALS (INTERNATIONAL)
+
+1. Go to **[Twilio's Official Console](https://www.twilio.com)** and click **Sign Up** for a free trial or paid account.
+2. Complete account creation and navigate to the **Twilio Console Dashboard**.
+3. Under the **Account Info** panel on the main screen, you will find:
+   - **Account SID:** Copy string starting with `AC...`
+   - **Auth Token:** Click *Show* and copy the token string.
+4. Go to **Phone Numbers** &rarr; **Manage** &rarr; **Buy a number** (or use your free trial Twilio number).
+   - Choose an SMS/Voice enabled phone number (e.g. `+18005550199`).
+5. Copy the purchased number and set it as `TWILIO_PHONE_NUMBER`.
+6. Set these keys in your Vercel Environment Variables:
+   - `TWILIO_ACCOUNT_SID`
+   - `TWILIO_AUTH_TOKEN`
+   - `TWILIO_PHONE_NUMBER`
+
+---
+
+## 1D. SUMMARY OF REQUIRED ENVIRONMENT VARIABLES (`.env.local` / Vercel Environment)
 
 ```env
-# Supabase Configuration
+# Supabase Configuration (From your Supabase Dashboard -> Project Settings -> API)
 NEXT_PUBLIC_SUPABASE_URL=https://your-supabase-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key-here
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key-here
 
-# Termii API Key (Primary Provider for +234 Nigeria SMS & Voice OTP)
+# Termii API Key (From Termii Dashboard -> Settings -> API Keys)
 TERMII_API_KEY=your-termii-api-key-here
 
-# Twilio Credentials (Primary Provider for International SMS & Voice OTP)
+# Twilio Credentials (From Twilio Console Dashboard)
 TWILIO_ACCOUNT_SID=your-twilio-account-sid-here
 TWILIO_AUTH_TOKEN=your-twilio-auth-token-here
 TWILIO_PHONE_NUMBER=+18005550199

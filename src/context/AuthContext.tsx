@@ -3,7 +3,7 @@
 /*
  * AUTHENTICATION & REAL DATABASE PERSISTENCE CONTEXT
  * Connects the frontend directly to Supabase relational tables with fallback,
- * persists user sessions, garage vehicles, orders, wallet balance, and onboarding status.
+ * persists user sessions, profile updates, garage vehicles, orders, wallet balance, and onboarding status.
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
@@ -26,6 +26,7 @@ import {
 
 interface AuthContextType {
   user: UserProfile;
+  updateUserProfile: (profile: Partial<UserProfile>) => Promise<void>;
   currentRole: UserRole;
   setRole: (role: UserRole) => void;
   isAuthenticated: boolean;
@@ -62,8 +63,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<UserProfile>(INITIAL_USER);
-  const [currentRole, setCurrentRole] = useState<UserRole>('driver');
+  const [user, setUser] = useState<UserProfile>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('mechsource_user');
+      if (saved) {
+        try { return JSON.parse(saved); } catch (e) {}
+      }
+    }
+    return INITIAL_USER;
+  });
+
+  const [currentRole, setCurrentRole] = useState<UserRole>(user.primary_role || 'driver');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
   const [phoneOtpSent, setPhoneOtpSent] = useState<boolean>(false);
   const [otpCode, setOtpCode] = useState<string>('');
@@ -80,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
   const [walletBalance, setWalletBalance] = useState<number>(150000);
 
-  // Load persistent user data from Supabase / localStorage on mount
+  // Load persistent user data on mount
   useEffect(() => {
     const loadUserData = async () => {
       setIsLoading(true);
@@ -105,6 +115,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     loadUserData();
   }, [user.id]);
+
+  const updateUserProfile = async (updates: Partial<UserProfile>) => {
+    const updatedUser = { ...user, ...updates };
+    setUser(updatedUser);
+    if (updates.primary_role) {
+      setCurrentRole(updates.primary_role);
+    }
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mechsource_user', JSON.stringify(updatedUser));
+    }
+
+    if (supabase) {
+      try {
+        await supabase
+          .from('users')
+          .upsert([{
+            id: updatedUser.id,
+            phone_number: updatedUser.phone_number,
+            full_name: updatedUser.full_name,
+            email: updatedUser.email,
+            primary_role: updatedUser.primary_role
+          }]);
+      } catch (err) {
+        console.warn('Supabase profile sync warning:', err);
+      }
+    }
+  };
 
   const completeOnboarding = () => {
     setHasCompletedOnboarding(true);
@@ -135,6 +172,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setIsAuthenticated(false);
     localStorage.removeItem('mechsource_onboarding');
+    localStorage.removeItem('mechsource_user');
     setHasCompletedOnboarding(false);
   };
 
@@ -210,6 +248,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         user,
+        updateUserProfile,
         currentRole,
         setRole: setCurrentRole,
         isAuthenticated,

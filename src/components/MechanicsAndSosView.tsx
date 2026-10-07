@@ -266,7 +266,7 @@ export const MechanicsAndSosView: React.FC = () => {
               key={mech.id}
               onClick={() => setSelectedMechanic(mech)}
               className={`bg-zinc-950 border rounded-2xl p-4 space-y-3 cursor-pointer transition-all ${
-                selectedMechanic.id === mech.id ? 'border-amber-500 ring-1 ring-amber-500/30' : 'border-zinc-800 hover:border-zinc-700'
+                selectedMechanic?.id === mech.id ? 'border-amber-500 ring-1 ring-amber-500/30' : 'border-zinc-800 hover:border-zinc-700'
               }`}
             >
               <div className="flex items-center gap-3">

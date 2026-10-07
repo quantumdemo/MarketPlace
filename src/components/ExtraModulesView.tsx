@@ -52,9 +52,19 @@ export const ExtraModulesView: React.FC = () => {
     setActiveTab
   } = useAuth();
 
-  const [equipmentList, setEquipmentList] = useState<EquipmentRental[]>(INITIAL_EQUIPMENT);
-  const [workshopsList, setWorkshopsList] = useState<Workshop[]>(INITIAL_WORKSHOPS);
+  const [equipmentList, setEquipmentList] = useState<EquipmentRental[]>([]);
+  const [workshopsList, setWorkshopsList] = useState<Workshop[]>([]);
   const [bookedEquipmentId, setBookedEquipmentId] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadExtraModulesData() {
+      const eq = await fetchEquipmentRentals();
+      const ws = await fetchWorkshops();
+      setEquipmentList(eq);
+      setWorkshopsList(ws);
+    }
+    loadExtraModulesData();
+  }, []);
 
   // Admin Dispute Override State
   const [activeDisputeResolved, setActiveDisputeResolved] = useState(false);

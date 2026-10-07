@@ -86,8 +86,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Interactive Real Database State
   const [garage, setGarage] = useState<GarageVehicle[]>([]);
   const [orders, setOrders] = useState<OrderRecord[]>([]);
-  const [transactions, setTransactions] = useState<WalletTransaction[]>(INITIAL_TRANSACTIONS);
-  const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
+  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [walletBalance, setWalletBalance] = useState<number>(150000);
 
   // Load persistent user data on mount

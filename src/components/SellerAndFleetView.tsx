@@ -10,9 +10,9 @@
  * - B2B RFQ Procurement Creation & Quote Comparison (Best value vs Genuine vs Aftermarket, 30-day credit terms, Export PO, Finance approval workflow)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { INITIAL_PART_REQUESTS, INITIAL_FLEET_RFQS, PartRequest, FleetRFQ } from '@/lib/db';
+import { fetchPartRequests, fetchFleetRFQs, PartRequest, FleetRFQ } from '@/lib/db';
 import {
   Store,
   PackageCheck,
@@ -35,7 +35,7 @@ export const SellerAndFleetView: React.FC = () => {
   const { currentRole, setRole, setActiveTab } = useAuth();
 
   // Seller State
-  const [partRequests, setPartRequests] = useState<PartRequest[]>(INITIAL_PART_REQUESTS);
+  const [partRequests, setPartRequests] = useState<PartRequest[]>([]);
   const [quoteInput, setQuoteInput] = useState<{ [key: string]: string }>({});
   const [quotedRequests, setQuotedRequests] = useState<string[]>([]);
 
@@ -48,7 +48,17 @@ export const SellerAndFleetView: React.FC = () => {
   const [listingPublished, setListingPublished] = useState(false);
 
   // Fleet RFQ State (Pages 34 & 35)
-  const [rfqs, setRfqs] = useState<FleetRFQ[]>(INITIAL_FLEET_RFQS);
+  const [rfqs, setRfqs] = useState<FleetRFQ[]>([]);
+
+  useEffect(() => {
+    async function loadSellerData() {
+      const requests = await fetchPartRequests();
+      const rfqsData = await fetchFleetRFQs();
+      setPartRequests(requests);
+      setRfqs(rfqsData);
+    }
+    loadSellerData();
+  }, []);
   const [awardedRfqId, setAwardedRfqId] = useState<string | null>(null);
 
   const handleSendQuote = (reqId: string) => {

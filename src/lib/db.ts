@@ -243,6 +243,59 @@ export async function fetchGarageVehicles(userId: string): Promise<GarageVehicle
   return [];
 }
 
+export async function fetchPartRequests(): Promise<PartRequest[]> {
+  if (supabase) {
+    const { data, error } = await supabase.from('part_requests').select('*');
+    if (!error && data) return data as PartRequest[];
+  }
+  return [];
+}
+
+export async function createPartRequest(request: Omit<PartRequest, 'id'>): Promise<PartRequest> {
+  const newReq = { ...request, id: `req-${Date.now()}` };
+  if (supabase) {
+    const { data, error } = await supabase.from('part_requests').insert([newReq]).select().single();
+    if (!error && data) return data as PartRequest;
+  }
+  return newReq as PartRequest;
+}
+
+export async function fetchFleetRFQs(): Promise<FleetRFQ[]> {
+  if (supabase) {
+    const { data, error } = await supabase.from('fleet_rfqs').select('*, quotes:fleet_rfq_quotes(*)');
+    if (!error && data) return data as FleetRFQ[];
+  }
+  return [];
+}
+
+export async function createFleetRFQQuote(rfqId: string, quote: Omit<FleetRFQQuote, 'id'>): Promise<FleetRFQQuote> {
+  const newQuote = { ...quote, id: `q-${Date.now()}`, rfq_id: rfqId };
+  if (supabase) {
+    const { data, error } = await supabase.from('fleet_rfq_quotes').insert([newQuote]).select().single();
+    if (!error && data) return data as FleetRFQQuote;
+  }
+  return newQuote as FleetRFQQuote;
+}
+
+export async function fetchActiveMechanicJob(mechanicId: string): Promise<MechanicJobRecord | null> {
+  if (supabase) {
+    const { data, error } = await supabase.from('mechanic_jobs').select('*').eq('mechanic_id', mechanicId).eq('is_active', true).maybeSingle();
+    if (!error && data) return data as MechanicJobRecord;
+  }
+  return null;
+}
+
+export async function updateMechanicJobStep(jobId: string, currentStep: number, steps: MechanicJobStep[], photos?: { before_photos?: string[]; after_photos?: string[] }): Promise<void> {
+  if (supabase) {
+    await supabase.from('mechanic_jobs').update({
+      current_step: currentStep,
+      steps,
+      ...(photos?.before_photos ? { before_photos: photos.before_photos } : {}),
+      ...(photos?.after_photos ? { after_photos: photos.after_photos } : {})
+    }).eq('id', jobId);
+  }
+}
+
 export async function createGarageVehicle(vehicle: Omit<GarageVehicle, 'id'>): Promise<GarageVehicle> {
   const newVehicle = { ...vehicle, id: `veh-${Date.now()}` };
   if (supabase) {

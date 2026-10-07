@@ -46,8 +46,14 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
   const [countryCode, setCountryCode] = useState('+234');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otpInput, setOtpInput] = useState('');
-  const [generatedOtp, setGeneratedOtp] = useState('481200');
-  const [otpError, setOtpError] = useState(false);
+  const [otpErrorMsg, setOtpErrorMsg] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  // Rate limiting & timer state
+  const [resendTimer, setResendTimer] = useState(60);
+  const [canResend, setCanResend] = useState(false);
+  const [attemptCount, setAttemptCount] = useState(0);
+  const [isLocked, setIsLocked] = useState(false);
 
   // Category-Specific Registration Details
   const [fullName, setFullName] = useState('');
@@ -123,20 +129,60 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
     setRole(r);
   };
 
-  const handleSendOtp = (e: React.FormEvent) => {
-    e.preventDefault();
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(code);
-    sendPhoneOtp(`${countryCode} ${phoneNumber}`);
+  // 60-second countdown timer effect
+  React.useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (step === 'otp' && resendTimer > 0) {
+      setCanResend(false);
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (resendTimer === 0) {
+      setCanResend(true);
+    }
+    return () => clearInterval(interval);
+  }, [step, resendTimer]);
+
+  const handleSendOtp = async (e?: React.FormEvent, isVoice: boolean = false) => {
+    if (e) e.preventDefault();
+    if (isLocked) return;
+
+    setResendTimer(60);
+    setCanResend(false);
+    setOtpErrorMsg(null);
+    await sendPhoneOtp(`${countryCode} ${phoneNumber}`, isVoice);
     setStep('otp');
   };
 
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (otpInput === generatedOtp || otpInput === '481200' || otpInput.length === 6) {
+    if (isLocked) return;
+
+    if (attemptCount >= 3) {
+      setIsLocked(true);
+      setOtpErrorMsg('Maximum verification attempts (3) reached. Please wait 60s or request a voice call.');
+      return;
+    }
+
+    setIsVerifying(true);
+    setOtpErrorMsg(null);
+
+    const fullPhone = `${countryCode} ${phoneNumber}`;
+    const result = await verifyPhoneOtp(fullPhone, otpInput);
+
+    setIsVerifying(false);
+
+    if (result.success) {
       setStep('registration');
     } else {
-      setOtpError(true);
+      const newAttempts = attemptCount + 1;
+      setAttemptCount(newAttempts);
+      if (newAttempts >= 3) {
+        setIsLocked(true);
+        setOtpErrorMsg('Rate limit exceeded: 3 failed attempts. Please request a new SMS or voice call.');
+      } else {
+        setOtpErrorMsg(result.error || `Invalid verification code. Attempts left: ${3 - newAttempts}`);
+      }
     }
   };
 
@@ -330,36 +376,64 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
           <form onSubmit={handleVerifyOtp} className="space-y-4">
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
               <p className="text-[11px] text-zinc-400">
-                Check your mobile phone SMS inbox for your 6-digit verification security code.
+                Check your mobile phone SMS inbox for your 6-digit security code (valid for 5 mins).
               </p>
               <input
                 type="text"
                 maxLength={6}
                 value={otpInput}
-                onChange={(e) => { setOtpInput(e.target.value); setOtpError(false); }}
+                disabled={isLocked || isVerifying}
+                onChange={(e) => { setOtpInput(e.target.value); setOtpErrorMsg(null); }}
                 placeholder="──────"
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3.5 text-center text-2xl font-mono font-black text-amber-400 tracking-widest focus:outline-none focus:border-amber-500 placeholder-zinc-700"
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3.5 text-center text-2xl font-mono font-black text-amber-400 tracking-widest focus:outline-none focus:border-amber-500 placeholder-zinc-700 disabled:opacity-50"
                 required
               />
             </div>
 
-            {otpError && (
+            {otpErrorMsg && (
               <p className="text-xs text-red-400 font-bold bg-red-500/10 p-2.5 rounded-lg border border-red-500/30 text-center">
-                Invalid code. Please check your SMS and try again.
+                {otpErrorMsg}
               </p>
             )}
 
             <button
               type="submit"
-              className="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black py-4 rounded-xl text-xs uppercase shadow-lg transition-all tracking-wider"
+              disabled={isLocked || isVerifying || otpInput.length < 6}
+              className="w-full bg-amber-500 hover:bg-amber-400 disabled:bg-zinc-800 disabled:text-zinc-500 text-zinc-950 font-black py-4 rounded-xl text-xs uppercase shadow-lg transition-all tracking-wider flex items-center justify-center gap-2"
             >
-              VERIFY CODE & CONTINUE
+              {isVerifying ? (
+                <span>VERIFYING SERVER-SIDE...</span>
+              ) : (
+                <span>VERIFY CODE & CONTINUE (STEP 3)</span>
+              )}
             </button>
           </form>
         </div>
 
-        <div className="text-center text-xs text-zinc-500 pb-4">
-          Resend SMS code in 00:42 · Call me instead
+        <div className="text-center text-xs text-zinc-400 pb-4 space-y-2">
+          {canResend ? (
+            <div className="flex items-center justify-center gap-4">
+              <button
+                type="button"
+                onClick={() => { setAttemptCount(0); setIsLocked(false); handleSendOtp(undefined, false); }}
+                className="text-amber-400 hover:underline font-bold"
+              >
+                Resend SMS Code
+              </button>
+              <span>·</span>
+              <button
+                type="button"
+                onClick={() => { setAttemptCount(0); setIsLocked(false); handleSendOtp(undefined, true); }}
+                className="text-amber-400 hover:underline font-bold"
+              >
+                Call me instead (Voice OTP)
+              </button>
+            </div>
+          ) : (
+            <div>
+              Resend SMS code in <strong className="font-mono text-amber-400">00:{resendTimer < 10 ? `0${resendTimer}` : resendTimer}</strong>
+            </div>
+          )}
         </div>
       </div>
     );

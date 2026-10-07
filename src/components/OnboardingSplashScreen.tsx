@@ -67,7 +67,10 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
     { code: '+254', flag: '🇰🇪', name: 'Kenya' },
     { code: '+233', flag: '🇬🇭', name: 'Ghana' },
     { code: '+27', flag: '🇿🇦', name: 'South Africa' },
-    { code: '+971', flag: '🇦🇪', name: 'UAE' }
+    { code: '+971', flag: '🇦🇪', name: 'UAE' },
+    { code: '+49', flag: '🇩🇪', name: 'Germany' },
+    { code: '+33', flag: '🇫🇷', name: 'France' },
+    { code: '+86', flag: '🇨🇳', name: 'China' }
   ];
 
   // Splash auto-advance
@@ -273,33 +276,38 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
         <form onSubmit={handleSendOtp} className="space-y-3 pt-4 border-t border-zinc-800">
           <div>
             <label className="text-[11px] font-bold text-zinc-400 block mb-1">ENTER MOBILE PHONE NUMBER</label>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-2">
               <select
                 value={countryCode}
                 onChange={(e) => setCountryCode(e.target.value)}
-                className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-xs text-amber-400 font-bold focus:outline-none"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3.5 text-sm text-amber-400 font-bold focus:outline-none focus:border-amber-500 cursor-pointer"
               >
                 {countryCodes.map((c) => (
                   <option key={c.code} value={c.code}>
-                    {c.flag} {c.code} ({c.name})
+                    {c.flag} {c.code} — {c.name}
                   </option>
                 ))}
               </select>
 
-              <input
-                type="tel"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="803 000 0000"
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm text-white focus:outline-none font-mono font-bold"
-                required
-              />
+              <div className="relative flex items-center">
+                <span className="absolute left-3.5 text-amber-400 font-mono font-extrabold text-sm">
+                  {countryCode}
+                </span>
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="803 000 0000"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-3.5 pl-16 pr-3.5 text-sm text-white focus:outline-none focus:border-amber-500 font-mono font-bold tracking-wide"
+                  required
+                />
+              </div>
             </div>
           </div>
 
           <button
             type="submit"
-            className="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black py-3.5 rounded-xl text-xs uppercase shadow-lg transition-all"
+            className="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black py-4 rounded-xl text-xs uppercase shadow-lg transition-all tracking-wider"
           >
             SEND SMS VERIFICATION CODE
           </button>
@@ -320,30 +328,30 @@ export const OnboardingSplashScreen: React.FC<{ onComplete: () => void }> = ({ o
           </div>
 
           <form onSubmit={handleVerifyOtp} className="space-y-4">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-2">
-              <span className="text-[11px] font-mono text-amber-400 block font-bold">
-                📱 Verification Code: <strong className="text-white text-base">{generatedOtp}</strong>
-              </span>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
+              <p className="text-[11px] text-zinc-400">
+                Check your mobile phone SMS inbox for your 6-digit verification security code.
+              </p>
               <input
                 type="text"
                 maxLength={6}
                 value={otpInput}
                 onChange={(e) => { setOtpInput(e.target.value); setOtpError(false); }}
-                placeholder="Enter 6-digit code"
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 text-center text-xl font-mono font-black text-amber-400 tracking-widest focus:outline-none focus:border-amber-500"
+                placeholder="──────"
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3.5 text-center text-2xl font-mono font-black text-amber-400 tracking-widest focus:outline-none focus:border-amber-500 placeholder-zinc-700"
                 required
               />
             </div>
 
             {otpError && (
-              <p className="text-xs text-red-400 font-bold bg-red-500/10 p-2 rounded-lg border border-red-500/30">
-                Invalid code. Enter: {generatedOtp}
+              <p className="text-xs text-red-400 font-bold bg-red-500/10 p-2.5 rounded-lg border border-red-500/30 text-center">
+                Invalid code. Please check your SMS and try again.
               </p>
             )}
 
             <button
               type="submit"
-              className="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black py-4 rounded-xl text-xs uppercase shadow-lg transition-all"
+              className="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black py-4 rounded-xl text-xs uppercase shadow-lg transition-all tracking-wider"
             >
               VERIFY CODE & CONTINUE
             </button>

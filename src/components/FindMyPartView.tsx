@@ -11,9 +11,9 @@
  * - Real multi-seller availability, OEM alternatives, delivery estimates, prices
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { INITIAL_PARTS, INITIAL_LISTINGS, PartItem, SellerListing, OrderRecord } from '@/lib/db';
+import { fetchParts, fetchListings, PartItem, SellerListing, OrderRecord } from '@/lib/db';
 import { uploadFile } from '@/lib/storage';
 import {
   Camera,
@@ -43,9 +43,22 @@ export const FindMyPartView: React.FC = () => {
   const [aiAnalysisResult, setAiAnalysisResult] = useState<string | null>(null);
 
   // Search results state
-  const [matchedParts, setMatchedParts] = useState<PartItem[]>(INITIAL_PARTS);
-  const [allListings, setAllListings] = useState<SellerListing[]>(INITIAL_LISTINGS);
+  const [dbParts, setDbParts] = useState<PartItem[]>([]);
+  const [matchedParts, setMatchedParts] = useState<PartItem[]>([]);
+  const [allListings, setAllListings] = useState<SellerListing[]>([]);
   const [orderCreatedNotice, setOrderCreatedNotice] = useState<string | null>(null);
+
+  // Load real records from database
+  useEffect(() => {
+    async function loadData() {
+      const parts = await fetchParts();
+      const listings = await fetchListings();
+      setDbParts(parts);
+      setMatchedParts(parts);
+      setAllListings(listings);
+    }
+    loadData();
+  }, []);
 
   // Handle Snap photo upload & AI part identification integration point
   const handlePartSnapUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,10 +85,10 @@ export const FindMyPartView: React.FC = () => {
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     if (!query.trim()) {
-      setMatchedParts(INITIAL_PARTS);
+      setMatchedParts(dbParts);
       return;
     }
-    const filtered = INITIAL_PARTS.filter(p =>
+    const filtered = dbParts.filter(p =>
       p.oem_number.toLowerCase().includes(query.toLowerCase()) ||
       p.name.toLowerCase().includes(query.toLowerCase()) ||
       p.category.toLowerCase().includes(query.toLowerCase())

@@ -11,9 +11,9 @@
  * - Platform Super Admin Control Panel (GMV financial analytics, user role management, escrow dispute overrides, system activity audit logs)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { INITIAL_EQUIPMENT, INITIAL_WORKSHOPS, EquipmentRental, Workshop } from '@/lib/db';
+import { fetchEquipmentRentals, fetchWorkshops, EquipmentRental, Workshop } from '@/lib/db';
 import {
   Building2,
   Truck,

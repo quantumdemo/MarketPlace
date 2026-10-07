@@ -231,7 +231,7 @@ export interface NotificationItem {
   read: boolean;
 }
 
-// LIVE SUPABASE DATABASE QUERY METHODS - NO DEMO FALLBACK WHEN DB CONNECTED
+// LIVE SUPABASE DATABASE QUERY METHODS - NO DEMO FALLBACK
 export async function fetchGarageVehicles(userId: string): Promise<GarageVehicle[]> {
   if (supabase) {
     const { data, error } = await supabase
@@ -240,7 +240,7 @@ export async function fetchGarageVehicles(userId: string): Promise<GarageVehicle
       .eq('user_id', userId);
     if (!error && data) return data as GarageVehicle[];
   }
-  return INITIAL_GARAGE;
+  return [];
 }
 
 export async function createGarageVehicle(vehicle: Omit<GarageVehicle, 'id'>): Promise<GarageVehicle> {
@@ -264,7 +264,7 @@ export async function fetchOrders(userId: string): Promise<OrderRecord[]> {
       .eq('user_id', userId);
     if (!error && data) return data as OrderRecord[];
   }
-  return INITIAL_ORDERS;
+  return [];
 }
 
 export async function createOrderRecord(order: OrderRecord): Promise<OrderRecord> {
@@ -304,7 +304,7 @@ export async function fetchParts(): Promise<PartItem[]> {
     const { data, error } = await supabase.from('parts').select('*');
     if (!error && data) return data as PartItem[];
   }
-  return INITIAL_PARTS;
+  return [];
 }
 
 export async function fetchListings(): Promise<SellerListing[]> {
@@ -312,7 +312,7 @@ export async function fetchListings(): Promise<SellerListing[]> {
     const { data, error } = await supabase.from('listings').select('*');
     if (!error && data) return data as SellerListing[];
   }
-  return INITIAL_LISTINGS;
+  return [];
 }
 
 export async function fetchMechanics(): Promise<MechanicProfile[]> {
@@ -320,7 +320,7 @@ export async function fetchMechanics(): Promise<MechanicProfile[]> {
     const { data, error } = await supabase.from('mechanic_profiles').select('*');
     if (!error && data) return data as MechanicProfile[];
   }
-  return INITIAL_MECHANICS;
+  return [];
 }
 
 export async function fetchEquipmentRentals(): Promise<EquipmentRental[]> {
@@ -328,7 +328,7 @@ export async function fetchEquipmentRentals(): Promise<EquipmentRental[]> {
     const { data, error } = await supabase.from('equipment_rentals').select('*');
     if (!error && data) return data as EquipmentRental[];
   }
-  return INITIAL_EQUIPMENT;
+  return [];
 }
 
 export async function fetchWorkshops(): Promise<Workshop[]> {
@@ -336,7 +336,7 @@ export async function fetchWorkshops(): Promise<Workshop[]> {
     const { data, error } = await supabase.from('workshops').select('*');
     if (!error && data) return data as Workshop[];
   }
-  return INITIAL_WORKSHOPS;
+  return [];
 }
 
 // DEFAULT INITIALIZATIONS

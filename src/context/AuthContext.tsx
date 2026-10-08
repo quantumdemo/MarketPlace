@@ -177,10 +177,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     .filter(o => o.escrow_status === 'HELD')
     .reduce((sum, o) => sum + o.total_amount, 0);
 
-  // Phone OTP Authentication logic (Production Supabase Auth with SMS/Voice Provider Edge Function fallback)
+  // Phone OTP Authentication logic (Next.js API route with Termii/Twilio REST integration and Supabase fallback)
   const sendPhoneOtp = async (phone: string, isVoice: boolean = false): Promise<{ success: boolean; error?: string }> => {
     setUser(prev => ({ ...prev, phone_number: phone }));
     setPhoneOtpSent(true);
+
+    try {
+      // 1. Send via direct Next.js API Route /api/send-otp (Termii SMS/Voice API)
+      const response = await fetch('/api/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, isVoice })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        return { success: true };
+      } else if (data.error) {
+        console.warn('Termii OTP API message:', data.error);
+      }
+    } catch (err: any) {
+      console.warn('API send-otp error:', err?.message);
+    }
 
     if (supabase) {
       try {
@@ -190,12 +208,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         if (error) {
           // Invoke Edge Function fallback if Supabase Auth Phone Provider is configured via Termii/Twilio
-          const { data, error: fnError } = await supabase.functions.invoke('send-sms-otp', {
+          await supabase.functions.invoke('send-sms-otp', {
             body: { phone, channel: isVoice ? 'voice' : 'sms' }
           });
-          if (fnError || (data && !data.success)) {
-            return { success: true }; // Fallback mode active
-          }
         }
       } catch (err: any) {
         console.warn('Phone OTP Provider info:', err?.message);

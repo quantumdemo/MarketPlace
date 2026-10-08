@@ -33,7 +33,7 @@ interface AuthContextType {
   phoneOtpSent: boolean;
   otpCode: string;
   setOtpCode: (code: string) => void;
-  sendPhoneOtp: (phone: string, isVoice?: boolean) => Promise<{ success: boolean; error?: string }>;
+  sendPhoneOtp: (phone: string) => Promise<{ success: boolean; error?: string }>;
   verifyPhoneOtp: (phone: string, token: string) => Promise<{ success: boolean; error?: string }>;
   checkUserExists: (phone: string) => Promise<{ exists: boolean; user?: UserProfile }>;
   loginExistingUser: (user: UserProfile) => void;
@@ -96,7 +96,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
   const [phoneOtpSent, setPhoneOtpSent] = useState<boolean>(false);
   const [otpCode, setOtpCode] = useState<string>('');
-  const [sentOtpSecret, setSentOtpSecret] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>(getRoleDefaultTab(user.primary_role || 'driver'));
 
   const setRole = (role: UserRole) => {
@@ -178,80 +177,73 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     .filter(o => o.escrow_status === 'HELD')
     .reduce((sum, o) => sum + o.total_amount, 0);
 
-  // Phone OTP Authentication logic (Next.js API route with Termii/Twilio REST integration and Supabase fallback)
-  const sendPhoneOtp = async (phone: string, isVoice: boolean = false): Promise<{ success: boolean; error?: string }> => {
-    setUser(prev => ({ ...prev, phone_number: phone }));
+  // Phone OTP Authentication logic using Supabase Native Phone Auth exclusively
+  const formatPhoneNumber = (phone: string): string => {
+    let cleaned = phone.replace(/[^\d+]/g, '');
+    if (cleaned.startsWith('0')) {
+      cleaned = '+234' + cleaned.slice(1);
+    } else if (!cleaned.startsWith('+')) {
+      cleaned = '+' + cleaned;
+    }
+    return cleaned;
+  };
+
+  const sendPhoneOtp = async (phone: string): Promise<{ success: boolean; error?: string }> => {
+    const formattedPhone = formatPhoneNumber(phone);
+    setUser(prev => ({ ...prev, phone_number: formattedPhone }));
     setPhoneOtpSent(true);
 
+    if (!supabase) {
+      return { success: false, error: 'Supabase client is not initialized.' };
+    }
+
     try {
-      // 1. Send via direct Next.js API Route /api/send-otp (Termii SMS/Voice API)
-      const response = await fetch('/api/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, isVoice })
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: formattedPhone
       });
 
-      const data = await response.json();
-      if (data.success) {
-        if (data.code) {
-          setSentOtpSecret(data.code);
-        } else {
-          setSentOtpSecret('123456'); // Standard fallback verification code
-        }
-        return { success: true };
-      } else if (data.error) {
-        console.warn('Termii OTP API message:', data.error);
+      if (error) {
+        console.error('Supabase signInWithOtp error:', error);
+        return { success: false, error: error.message };
       }
-    } catch (err: any) {
-      console.warn('API send-otp error:', err?.message);
-    }
 
-    if (supabase) {
-      try {
-        const { error } = await supabase.auth.signInWithOtp({
-          phone,
-          options: { channel: 'sms' }
-        });
-        if (error) {
-          // Invoke Edge Function fallback if Supabase Auth Phone Provider is configured via Termii/Twilio
-          await supabase.functions.invoke('send-sms-otp', {
-            body: { phone, channel: isVoice ? 'voice' : 'sms' }
-          });
-        }
-      } catch (err: any) {
-        console.warn('Phone OTP Provider info:', err?.message);
-      }
+      return { success: true };
+    } catch (err: any) {
+      console.error('Supabase signInWithOtp exception:', err);
+      return { success: false, error: err?.message || 'Failed to send OTP verification code.' };
     }
-    return { success: true };
   };
 
   const verifyPhoneOtp = async (phone: string, token: string): Promise<{ success: boolean; error?: string }> => {
-    if (supabase) {
-      try {
-        const { data, error } = await supabase.auth.verifyOtp({
-          phone,
-          token,
-          type: 'sms'
-        });
-        if (!error && data.session) {
-          setIsAuthenticated(true);
-          setPhoneOtpSent(false);
-          return { success: true };
-        }
-      } catch (err: any) {
-        console.warn('Supabase Auth verify error:', err?.message);
+    const formattedPhone = formatPhoneNumber(phone);
+
+    if (!supabase) {
+      return { success: false, error: 'Supabase client is not initialized.' };
+    }
+
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        phone: formattedPhone,
+        token: token.trim(),
+        type: 'sms'
+      });
+
+      if (error) {
+        console.error('Supabase verifyOtp error:', error);
+        return { success: false, error: error.message || 'Invalid code' };
       }
-    }
 
-    // Strict validation check against sent OTP or test code '123456'
-    const validCodes = [sentOtpSecret, '123456'].filter(Boolean);
-    if (validCodes.includes(token.trim())) {
-      setIsAuthenticated(true);
-      setPhoneOtpSent(false);
-      return { success: true };
-    }
+      if (data.session || data.user) {
+        setIsAuthenticated(true);
+        setPhoneOtpSent(false);
+        return { success: true };
+      }
 
-    return { success: false, error: 'Incorrect verification code. Please enter the valid OTP sent to your phone or use 123456 in test mode.' };
+      return { success: false, error: 'Invalid verification code.' };
+    } catch (err: any) {
+      console.error('Supabase verifyOtp exception:', err);
+      return { success: false, error: err?.message || 'Invalid code' };
+    }
   };
 
   const checkUserExists = async (phone: string) => {

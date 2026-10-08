@@ -87,7 +87,7 @@ export function SignupFlow() {
     setRole(r);
   };
 
-  const handleSendOtp = async (e?: React.FormEvent, isVoice: boolean = false) => {
+  const handleSendOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (isLocked) return;
 
@@ -99,7 +99,11 @@ export function SignupFlow() {
     setResendTimer(60);
     setCanResend(false);
     setOtpErrorMsg(null);
-    await sendPhoneOtp(`${countryCode} ${phoneNumber}`, isVoice);
+    const res = await sendPhoneOtp(`${countryCode} ${phoneNumber}`);
+    if (!res.success) {
+      setOtpErrorMsg(res.error || 'Failed to send OTP code via Supabase Phone Auth.');
+      return;
+    }
     setSignupStep(3);
   };
 
@@ -355,31 +359,17 @@ export function SignupFlow() {
 
             <div className="text-center text-xs text-zinc-400 space-y-2">
               {canResend ? (
-                <div className="flex items-center justify-center gap-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAttemptCount(0);
-                      setIsLocked(false);
-                      handleSendOtp(undefined, false);
-                    }}
-                    className="text-amber-400 hover:underline font-bold"
-                  >
-                    Resend SMS Code
-                  </button>
-                  <span>·</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAttemptCount(0);
-                      setIsLocked(false);
-                      handleSendOtp(undefined, true);
-                    }}
-                    className="text-amber-400 hover:underline font-bold"
-                  >
-                    Call me instead (Voice OTP)
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAttemptCount(0);
+                    setIsLocked(false);
+                    handleSendOtp();
+                  }}
+                  className="text-amber-400 hover:underline font-bold"
+                >
+                  Resend SMS Code
+                </button>
               ) : (
                 <div>
                   Resend SMS code in{' '}

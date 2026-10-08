@@ -35,6 +35,8 @@ interface AuthContextType {
   setOtpCode: (code: string) => void;
   sendPhoneOtp: (phone: string, isVoice?: boolean) => Promise<{ success: boolean; error?: string }>;
   verifyPhoneOtp: (phone: string, token: string) => Promise<{ success: boolean; error?: string }>;
+  checkUserExists: (phone: string) => Promise<{ exists: boolean; user?: UserProfile }>;
+  loginExistingUser: (user: UserProfile) => void;
   logout: () => void;
   // Garage
   garage: GarageVehicle[];
@@ -230,6 +232,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: false, error: 'Invalid verification code. Please check your SMS/Voice OTP and try again.' };
   };
 
+  const checkUserExists = async (phone: string) => {
+    const { checkUserExistsByPhone } = await import('@/lib/db');
+    return await checkUserExistsByPhone(phone);
+  };
+
+  const loginExistingUser = (existingUser: UserProfile) => {
+    setUser(existingUser);
+    setIsAuthenticated(true);
+    setHasCompletedOnboarding(true);
+    if (existingUser.primary_role) {
+      setRole(existingUser.primary_role);
+    }
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mechsource_user', JSON.stringify(existingUser));
+      localStorage.setItem('mechsource_onboarding', 'true');
+    }
+  };
+
   const logout = () => {
     setIsAuthenticated(false);
     localStorage.removeItem('mechsource_onboarding');
@@ -318,6 +338,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setOtpCode,
         sendPhoneOtp,
         verifyPhoneOtp,
+        checkUserExists,
+        loginExistingUser,
         logout,
         garage,
         addVehicleToGarage,

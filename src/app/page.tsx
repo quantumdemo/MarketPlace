@@ -3,11 +3,11 @@
 /*
  * MAIN MECHSOURCE APPLICATION ENTRY POINT
  * Renders Onboarding / Phone Auth flow for non-authenticated or new users,
- * and wraps authenticated users in the responsive AppShell layout with AuthProvider context.
+ * and wraps authenticated users in the responsive AppShell layout.
  */
 
 import React from 'react';
-import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { AppShell } from '@/components/AppShell';
 import { OnboardingSplashScreen } from '@/components/OnboardingSplashScreen';
 import { WelcomePlatformBanner } from '@/components/WelcomePlatformBanner';
@@ -18,11 +18,11 @@ import { MechanicsAndSosView } from '@/components/MechanicsAndSosView';
 import { SellerAndFleetView } from '@/components/SellerAndFleetView';
 import { ExtraModulesView } from '@/components/ExtraModulesView';
 
-function MainContent() {
-  const { hasCompletedOnboarding, completeOnboarding, activeTab } = useAuth();
+export default function Home() {
+  const { hasCompletedOnboarding, activeTab } = useAuth();
 
   if (!hasCompletedOnboarding) {
-    return <OnboardingSplashScreen onComplete={completeOnboarding} />;
+    return <OnboardingSplashScreen />;
   }
 
   const renderActiveView = () => {
@@ -59,12 +59,4 @@ function MainContent() {
   };
 
   return <AppShell>{renderActiveView()}</AppShell>;
-}
-
-export default function Home() {
-  return (
-    <AuthProvider>
-      <MainContent />
-    </AuthProvider>
-  );
 }

@@ -22,7 +22,6 @@ We have performed a complete audit of the MECHSOURCE codebase (`src/lib/db.ts`, 
 | External Service | Environment Variable Name | Purpose in MECHSOURCE | Where to Add Key |
 | :--- | :--- | :--- | :--- |
 | **1. Supabase Database** | `NEXT_PUBLIC_SUPABASE_URL`<br>`NEXT_PUBLIC_SUPABASE_ANON_KEY`<br>`SUPABASE_SERVICE_ROLE_KEY` | Relational PostgreSQL database, Auth user sessions, & image storage buckets | Vercel Environment Variables & `.env.local` |
-| **2. Termii Telecommunications** | `TERMII_API_KEY` | Dispatches SMS & Voice OTP verification codes to **+234 Nigeria** phone numbers | Vercel Environment Variables & Supabase Secrets |
 | **3. Twilio Telecommunications** | `TWILIO_ACCOUNT_SID`<br>`TWILIO_AUTH_TOKEN`<br>`TWILIO_PHONE_NUMBER` | Dispatches SMS & Voice OTP verification codes to **International** phone numbers | Vercel Environment Variables & Supabase Secrets |
 | **4. OpenAI Vision AI** | `OPENAI_VISION_KEY` | Automatic computer vision identification for "Snap It. We Name It." part photos | Vercel Environment Variables |
 | **5. Google Cloud Vision OCR** | `GOOGLE_VISION_OCR_KEY` | Automatic OCR text extraction for vehicle registration papers & VIN scanner | Vercel Environment Variables |
@@ -43,14 +42,6 @@ We have performed a complete audit of the MECHSOURCE codebase (`src/lib/db.ts`, 
 
 ---
 
-### 🔑 2. Termii API Key (+234 Nigeria SMS & Voice)
-1. Go to **[Termii Portal](https://termii.com)** and click **Get Started**.
-2. Complete account registration and log into your **Termii Dashboard**.
-3. In the left navigation menu, click **API Keys** (or go to `Settings -> API Keys`).
-4. Copy your **API Key** string (e.g. `TLxxxxxxxxxxxxxxxxxxxxxxxxxx`) into `TERMII_API_KEY`.
-5. *(Optional for branding)* Navigate to **Sender ID** in Termii and request `MechSource` as your registered SMS sender name.
-
----
 
 ### 🔑 3. Twilio Credentials (International SMS & Voice)
 1. Go to **[Twilio Console](https://www.twilio.com)** and sign up for an account.
@@ -107,7 +98,7 @@ We have performed a complete audit of the MECHSOURCE codebase (`src/lib/db.ts`, 
 After adding keys to Vercel, verify feature activation:
 
 - [x] **Database & Auth:** Users register, sign in, and persist vehicles in Garage.
-- [x] **SMS OTP:** Real SMS delivered to +234 mobile phones via Termii and international phones via Twilio.
+- [x] **SMS OTP:** Real SMS delivered directly via Supabase Auth Phone Provider (Twilio/MessageBird/Vonage/Twillio SMS native provider configured in Supabase Dashboard).
 - [x] **Part Snap AI:** Camera uploads automatically return OEM part numbers.
 - [x] **VIN OCR:** Vehicle document scanner automatically extracts VIN numbers.
 - [x] **Map Tiles:** Live map tiles render under mobile mechanic tracking and SOS dispatch.

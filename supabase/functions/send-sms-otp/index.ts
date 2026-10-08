@@ -31,20 +31,38 @@ serve(async (req) => {
     // Generate secure 6-digit OTP
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
 
+    // Clean phone number format (digits only, e.g. 2348030000000)
+    let cleanPhone = phone.replace(/[^0-9]/g, '');
+    if (cleanPhone.startsWith('0') && cleanPhone.length === 11) {
+      cleanPhone = `234${cleanPhone.slice(1)}`;
+    }
+
+    const termiiSenderId = Deno.env.get('TERMII_SENDER_ID') || 'N-Alert';
+
     // 1. Termii SMS/Voice Integration (+234 Nigeria focus)
-    if (termiiApiKey && phone.includes('+234')) {
+    if (termiiApiKey) {
       const termiiEndpoint = channel === 'voice'
         ? 'https://api.ng.termii.com/api/sms/otp/send'
         : 'https://api.ng.termii.com/api/sms/send';
 
-      const payload = {
-        to: phone.replace(/\s+/g, ''),
-        from: 'MechSource',
-        sms: `Your MechSource security verification code is: ${otpCode}. Valid for 5 minutes. Do not share with anyone.`,
-        type: 'plain',
-        channel: 'generic',
-        api_key: termiiApiKey
-      };
+      const payload = channel === 'voice'
+        ? {
+            api_key: termiiApiKey,
+            phone_number: cleanPhone,
+            pin_attempts: 3,
+            pin_time_to_live: 10,
+            pin_length: 6,
+            pin_placeholder: '< 1234 >',
+            message_text: 'Your MechSource security code is < 1234 >. Valid for 10 minutes.'
+          }
+        : {
+            api_key: termiiApiKey,
+            to: cleanPhone,
+            from: termiiSenderId,
+            sms: `Your MechSource security verification code is: ${otpCode}. Valid for 5 minutes. Do not share with anyone.`,
+            type: 'plain',
+            channel: 'dnd'
+          };
 
       const res = await fetch(termiiEndpoint, {
         method: 'POST',

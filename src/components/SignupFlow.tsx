@@ -225,7 +225,7 @@ export function SignupFlow() {
               onClick={() => setSignupStep(2)}
               className="w-full mt-4 bg-amber-500 hover:bg-amber-400 active:scale-[0.98] text-zinc-950 font-black py-4 rounded-xl text-xs uppercase shadow-lg transition-all flex items-center justify-center gap-2"
             >
-              <span>CONTINUE TO MOBILE PHONE</span>
+              <span>CONTINUE</span>
               <ArrowRight className="w-4 h-4 stroke-[3]" />
             </button>
           </div>
@@ -521,17 +521,6 @@ export function SignupFlow() {
         )}
       </div>
 
-      {/* CLEAR DIVIDER & BOTTOM SWITCHER LINK */}
-      <div className="mt-8 pt-6 border-t border-zinc-800 text-center">
-        <p className="text-xs text-zinc-400 mb-2">Already have an account?</p>
-        <Link
-          href="/signin"
-          className="text-amber-400 font-black text-xs uppercase hover:underline tracking-wider inline-flex items-center gap-1"
-        >
-          <span>SIGN IN TO EXISTING ACCOUNT</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
-      </div>
     </div>
   );
 }

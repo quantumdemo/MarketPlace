@@ -319,17 +319,6 @@ export function SigninFlow() {
         )}
       </div>
 
-      {/* CLEAR DIVIDER & BOTTOM SWITCHER LINK */}
-      <div className="mt-8 pt-6 border-t border-zinc-800 text-center">
-        <p className="text-xs text-zinc-400 mb-2">Don't have an account?</p>
-        <Link
-          href="/signup"
-          className="text-amber-400 font-black text-xs uppercase hover:underline tracking-wider inline-flex items-center gap-1"
-        >
-          <span>CREATE NEW ACCOUNT</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
-      </div>
     </div>
   );
 }

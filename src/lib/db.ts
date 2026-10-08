@@ -232,6 +232,40 @@ export interface NotificationItem {
 }
 
 // LIVE SUPABASE DATABASE QUERY METHODS - NO DEMO FALLBACK
+export async function checkUserExistsByPhone(phone: string): Promise<{ exists: boolean; user?: UserProfile }> {
+  if (supabase) {
+    try {
+      const cleanPhone = phone.trim();
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('phone_number', cleanPhone)
+        .maybeSingle();
+      if (!error && data) {
+        return { exists: true, user: data as UserProfile };
+      }
+    } catch (err) {
+      console.warn('Check user exists error:', err);
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('mechsource_user');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const savedPhone = (parsed.phone_number || '').replace(/\s+/g, '');
+        const targetPhone = phone.replace(/\s+/g, '');
+        if (savedPhone && targetPhone && (savedPhone === targetPhone || savedPhone.endsWith(targetPhone.slice(-8)))) {
+          return { exists: true, user: parsed };
+        }
+      } catch (e) {}
+    }
+  }
+
+  return { exists: false };
+}
+
 export async function fetchGarageVehicles(userId: string): Promise<GarageVehicle[]> {
   if (supabase) {
     const { data, error } = await supabase

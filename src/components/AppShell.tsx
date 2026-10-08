@@ -103,7 +103,7 @@ export const AppHeader: React.FC = () => {
                   Switch MechSource Role:
                 </div>
 
-                {(['driver', 'fleet', 'seller', 'mechanic', 'admin'] as UserRole[]).map(role => (
+                {(['driver', 'fleet', 'seller', 'mechanic'] as UserRole[]).map(role => (
                   <button
                     key={role}
                     onClick={() => {
@@ -112,7 +112,6 @@ export const AppHeader: React.FC = () => {
                       if (role === 'seller') setActiveTab('seller_dash');
                       else if (role === 'mechanic') setActiveTab('mechanic_dash');
                       else if (role === 'fleet') setActiveTab('fleet_yard');
-                      else if (role === 'admin') setActiveTab('admin_panel');
                       else setActiveTab('home');
                     }}
                     className={`w-full text-left px-3 py-2.5 rounded-lg text-xs flex items-center justify-between transition-colors ${

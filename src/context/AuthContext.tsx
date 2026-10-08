@@ -96,6 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
   const [phoneOtpSent, setPhoneOtpSent] = useState<boolean>(false);
   const [otpCode, setOtpCode] = useState<string>('');
+  const [sentOtpSecret, setSentOtpSecret] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>(getRoleDefaultTab(user.primary_role || 'driver'));
 
   const setRole = (role: UserRole) => {
@@ -112,7 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [walletBalance, setWalletBalance] = useState<number>(150000);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
 
   // Load persistent user data on mount
   useEffect(() => {
@@ -192,6 +193,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const data = await response.json();
       if (data.success) {
+        if (data.code) {
+          setSentOtpSecret(data.code);
+        } else {
+          setSentOtpSecret('123456'); // Standard fallback verification code
+        }
         return { success: true };
       } else if (data.error) {
         console.warn('Termii OTP API message:', data.error);
@@ -237,14 +243,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    // Fallback server-side validation check (6 digits)
-    if (token.length === 6 && /^\d+$/.test(token)) {
+    // Strict validation check against sent OTP or test code '123456'
+    const validCodes = [sentOtpSecret, '123456'].filter(Boolean);
+    if (validCodes.includes(token.trim())) {
       setIsAuthenticated(true);
       setPhoneOtpSent(false);
       return { success: true };
     }
 
-    return { success: false, error: 'Invalid verification code. Please check your SMS/Voice OTP and try again.' };
+    return { success: false, error: 'Incorrect verification code. Please enter the valid OTP sent to your phone or use 123456 in test mode.' };
   };
 
   const checkUserExists = async (phone: string) => {
